@@ -1,0 +1,9 @@
+[mongo]
+uri = "mongodb://prod-server:27017"
+database = "production_db"
+connection_timeout = 30
+
+[server]
+host = "127.0.0.1"
+port = 3000
+worker_threads = 8
