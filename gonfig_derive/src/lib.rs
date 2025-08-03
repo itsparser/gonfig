@@ -54,7 +54,7 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
     let name = &opts.ident;
     let (impl_generics, ty_generics, where_clause) = opts.generics.split_for_impl();
 
-    let allow_env = true; // Always enable environment variables by default  
+    let allow_env = true; // Always enable environment variables by default
     let allow_cli = opts.allow_cli;
     let allow_config = opts.allow_config;
 
@@ -115,35 +115,35 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                 if #allow_env {
                     // Create custom environment source with field mappings
                     let mut env = ::gonfig::Environment::new();
-                    
+
                     if !#env_prefix.is_empty() {
                         env = env.with_prefix(#env_prefix);
                     }
-                    
+
                     // Apply field-level mappings
                     for (field_name, env_key, _cli_key) in &field_mappings {
                         env = env.with_field_mapping(field_name, env_key);
                     }
-                    
+
                     builder = builder.with_env_custom(env);
                 }
 
                 if #allow_cli {
                     // Create custom CLI source with field mappings
                     let mut cli = ::gonfig::Cli::from_args();
-                    
+
                     // Apply field-level CLI mappings
                     for (field_name, _env_key, cli_key) in &field_mappings {
                         cli = cli.with_field_mapping(field_name, cli_key);
                     }
-                    
+
                     builder = builder.with_cli_custom(cli);
                 }
 
                 if #allow_config {
                     // Config file support - check for default config files
                     use std::path::Path;
-                    
+
                     if Path::new("config.toml").exists() {
                         builder = match builder.with_file("config.toml") {
                             Ok(b) => b,
@@ -174,32 +174,32 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                 if #allow_env {
                     // Create custom environment source with field mappings
                     let mut env = ::gonfig::Environment::new();
-                    
+
                     if !#env_prefix.is_empty() {
                         env = env.with_prefix(#env_prefix);
                     }
-                    
+
                     // Apply field-level mappings
                     for (field_name, env_key, _cli_key) in &field_mappings {
                         env = env.with_field_mapping(field_name, env_key);
                     }
-                    
+
                     builder = builder.with_env_custom(env);
                 }
 
                 if #allow_cli {
                     // Create custom CLI source with field mappings
                     let mut cli = ::gonfig::Cli::from_args();
-                    
+
                     // Apply field-level CLI mappings
                     for (field_name, _env_key, cli_key) in &field_mappings {
                         cli = cli.with_field_mapping(field_name, cli_key);
                     }
-                    
+
                     builder = builder.with_cli_custom(cli);
                 }
 
-                // Note: Config file loading is not supported in gonfig_builder() 
+                // Note: Config file loading is not supported in gonfig_builder()
                 // due to Result handling requirements. Use from_gonfig() instead
                 // for full config file support.
 

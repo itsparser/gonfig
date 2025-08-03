@@ -54,8 +54,13 @@ impl Environment {
         self
     }
 
-    pub fn with_field_mapping(mut self, field_name: impl Into<String>, env_key: impl Into<String>) -> Self {
-        self.field_mappings.insert(field_name.into(), env_key.into());
+    pub fn with_field_mapping(
+        mut self,
+        field_name: impl Into<String>,
+        env_key: impl Into<String>,
+    ) -> Self {
+        self.field_mappings
+            .insert(field_name.into(), env_key.into());
         self
     }
 
@@ -106,7 +111,6 @@ impl Environment {
 
         json!(value)
     }
-
 
     pub fn collect_for_struct(
         &self,
@@ -193,10 +197,16 @@ impl Environment {
 
                 if key_check.starts_with(&prefix_str) {
                     let trimmed = key_check[prefix_str.len()..].trim_start_matches(&self.separator);
-                    flat_map.insert(trimmed.to_lowercase(), Self::parse_env_value(override_value));
+                    flat_map.insert(
+                        trimmed.to_lowercase(),
+                        Self::parse_env_value(override_value),
+                    );
                 }
             } else {
-                flat_map.insert(override_key.to_lowercase(), Self::parse_env_value(override_value));
+                flat_map.insert(
+                    override_key.to_lowercase(),
+                    Self::parse_env_value(override_value),
+                );
             }
         }
 
@@ -219,7 +229,7 @@ impl ConfigSource for Environment {
         if !self.field_mappings.is_empty() {
             // Use field mappings when available
             let mut result = Map::new();
-            
+
             // First collect using field mappings
             for (field_name, env_key) in &self.field_mappings {
                 // Check overrides first, then environment
@@ -229,7 +239,7 @@ impl ConfigSource for Environment {
                     result.insert(field_name.clone(), Self::parse_env_value(&value));
                 }
             }
-            
+
             // Then collect any prefixed variables not in mappings
             if let Some(prefix) = &self.prefix {
                 for (key, value) in env::vars() {
@@ -238,15 +248,18 @@ impl ConfigSource for Environment {
                     } else {
                         prefix.as_str().to_uppercase()
                     };
-                    
+
                     let key_check = if self.case_sensitive {
                         key.clone()
                     } else {
                         key.to_uppercase()
                     };
-                    
-                    if key_check.starts_with(&prefix_str) && !self.field_mappings.values().any(|v| v == &key) {
-                        let trimmed = key_check[prefix_str.len()..].trim_start_matches(&self.separator);
+
+                    if key_check.starts_with(&prefix_str)
+                        && !self.field_mappings.values().any(|v| v == &key)
+                    {
+                        let trimmed =
+                            key_check[prefix_str.len()..].trim_start_matches(&self.separator);
                         let field_name = trimmed.to_lowercase();
                         if !result.contains_key(&field_name) {
                             result.insert(field_name, Self::parse_env_value(&value));
@@ -254,7 +267,7 @@ impl ConfigSource for Environment {
                     }
                 }
             }
-            
+
             Ok(Value::Object(result))
         } else {
             self.collect_with_flat_keys()

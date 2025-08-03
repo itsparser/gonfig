@@ -87,13 +87,17 @@ impl Config {
 
         // For optional configs, only ignore file-not-found errors
         match config.load() {
-            Ok(()) => {},
+            Ok(()) => {}
             Err(Error::Io(ref e)) if e.kind() == std::io::ErrorKind::NotFound => {
                 // File not found is OK for optional configs
-            },
+            }
             Err(e) => {
                 // Log parse errors but don't fail
-                tracing::warn!("Failed to parse optional config file {}: {}", path_display, e);
+                tracing::warn!(
+                    "Failed to parse optional config file {}: {}",
+                    path_display,
+                    e
+                );
             }
         }
         Ok(config)

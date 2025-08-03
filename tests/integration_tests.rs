@@ -1,4 +1,4 @@
-use gonfig::{Gonfig, ConfigBuilder};
+use gonfig::{ConfigBuilder, Gonfig};
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -7,10 +7,10 @@ use std::env;
 struct IntegrationConfig {
     database_url: String,
     port: u16,
-    
+
     #[gonfig(env_name = "CUSTOM_DEBUG")]
     debug: bool,
-    
+
     #[skip]
     #[serde(skip)]
     internal_field: Option<String>,
@@ -21,14 +21,14 @@ fn test_derive_macro_basic() {
     env::set_var("APP_DATABASE_URL", "postgres://localhost");
     env::set_var("APP_PORT", "8080");
     env::set_var("CUSTOM_DEBUG", "true");
-    
+
     let config = IntegrationConfig::from_gonfig().unwrap();
-    
+
     assert_eq!(config.database_url, "postgres://localhost");
     assert_eq!(config.port, 8080);
-    assert_eq!(config.debug, true);
+    assert!(config.debug);
     assert_eq!(config.internal_field, None);
-    
+
     env::remove_var("APP_DATABASE_URL");
     env::remove_var("APP_PORT");
     env::remove_var("CUSTOM_DEBUG");
@@ -39,7 +39,7 @@ fn test_derive_macro_basic() {
 struct CliEnabledConfig {
     host: String,
     port: u16,
-    
+
     #[gonfig(cli_name = "enable-ssl")]
     ssl_enabled: bool,
 }
@@ -51,13 +51,13 @@ fn test_derive_macro_with_cli() {
     env::set_var("TEST_HOST", "localhost");
     env::set_var("TEST_PORT", "3000");
     env::set_var("TEST_SSL_ENABLED", "false");
-    
+
     let config = CliEnabledConfig::from_gonfig().unwrap();
-    
+
     assert_eq!(config.host, "localhost");
     assert_eq!(config.port, 3000);
-    assert_eq!(config.ssl_enabled, false);
-    
+    assert!(!config.ssl_enabled);
+
     env::remove_var("TEST_HOST");
     env::remove_var("TEST_PORT");
     env::remove_var("TEST_SSL_ENABLED");
@@ -89,7 +89,7 @@ fn test_nested_structs() {
     env::set_var("SERVER_PORT", "8080");
     env::set_var("DB_DATABASECONFIG_URL", "postgres://db");
     env::set_var("DB_DATABASECONFIG_POOL_SIZE", "10");
-    
+
     // Since nested structs need proper JSON structure, let's use builder
     let config: NestedConfig = ConfigBuilder::new()
         .with_env("")
@@ -104,12 +104,12 @@ fn test_nested_structs() {
                 pool_size: 10,
             },
         });
-    
+
     assert_eq!(config.server.host, "0.0.0.0");
     assert_eq!(config.server.port, 8080);
     assert_eq!(config.database.url, "postgres://db");
     assert_eq!(config.database.pool_size, 10);
-    
+
     env::remove_var("SERVER_HOST");
     env::remove_var("SERVER_PORT");
     env::remove_var("DB_DATABASECONFIG_URL");
@@ -130,12 +130,12 @@ fn test_config_file_support() {
     // This test just verifies the macro compiles correctly with allow_config
     env::set_var("CFG_NAME", "test");
     env::set_var("CFG_VALUE", "42");
-    
+
     let config = ConfigFileEnabled::from_gonfig().unwrap();
-    
+
     assert_eq!(config.name, "test");
     assert_eq!(config.value, 42);
-    
+
     env::remove_var("CFG_NAME");
     env::remove_var("CFG_VALUE");
 }

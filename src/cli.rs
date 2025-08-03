@@ -52,7 +52,7 @@ impl Cli {
             }
         }
 
-        Self { 
+        Self {
             parsed_values,
             field_mappings: HashMap::new(),
         }
@@ -72,14 +72,19 @@ impl Cli {
             }
         }
 
-        Ok(Self { 
+        Ok(Self {
             parsed_values,
             field_mappings: HashMap::new(),
         })
     }
 
-    pub fn with_field_mapping(mut self, field_name: impl Into<String>, cli_key: impl Into<String>) -> Self {
-        self.field_mappings.insert(field_name.into(), cli_key.into());
+    pub fn with_field_mapping(
+        mut self,
+        field_name: impl Into<String>,
+        cli_key: impl Into<String>,
+    ) -> Self {
+        self.field_mappings
+            .insert(field_name.into(), cli_key.into());
         self
     }
 

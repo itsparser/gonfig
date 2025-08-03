@@ -51,23 +51,23 @@ pub enum Error {
     Validation(String),
 }
 
-/// Type alias for `Result<T, konfig::Error>`.
+/// Type alias for `Result<T, gonfig::Error>`.
 ///
 /// This is a convenience type that you can use throughout your application
-/// when working with konfig operations.
+/// when working with gonfig operations.
 ///
 /// # Examples
 ///
 /// ```rust,no_run
-/// use konfig::Result;
+/// use gonfig::Result;
 ///
 /// struct MyConfig;
 /// impl MyConfig {
-///     fn from_konfig() -> Result<Self> { Ok(MyConfig) }
+///     fn from_gonfig() -> Result<Self> { Ok(MyConfig) }
 /// }
 ///
 /// fn load_config() -> Result<MyConfig> {
-///     MyConfig::from_konfig()
+///     MyConfig::from_gonfig()
 /// }
 /// ```
 pub type Result<T> = std::result::Result<T, Error>;

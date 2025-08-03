@@ -48,14 +48,12 @@ impl MergeStrategy {
             (Value::Object(mut base_map), Value::Object(incoming_map)) => {
                 for (key, incoming_value) in incoming_map {
                     match base_map.get(&key) {
-                        Some(Value::Array(base_arr)) if incoming_value.is_array() => {
-                            if let Value::Array(incoming_arr) = incoming_value {
-                                let mut combined = base_arr.clone();
-                                combined.extend(incoming_arr);
-                                base_map.insert(key, Value::Array(combined));
-                            }
+                        Some(base_value) => {
+                            // Recursively apply append merge to nested structures
+                            let merged = Self::append_merge(base_value.clone(), incoming_value);
+                            base_map.insert(key, merged);
                         }
-                        _ => {
+                        None => {
                             base_map.insert(key, incoming_value);
                         }
                     }

@@ -23,7 +23,7 @@ type ValidationFn = Box<dyn Fn(&Value) -> Result<()>>;
 /// # Examples
 ///
 /// ```rust,no_run
-/// use konfig::{ConfigBuilder, MergeStrategy};
+/// use gonfig::{ConfigBuilder, MergeStrategy};
 /// use serde::{Deserialize, Serialize};
 ///
 /// #[derive(Deserialize)]
@@ -32,7 +32,7 @@ type ValidationFn = Box<dyn Fn(&Value) -> Result<()>>;
 ///     port: u16,
 /// }
 ///
-/// # fn example() -> konfig::Result<()> {
+/// # fn example() -> gonfig::Result<()> {
 /// let config: Config = ConfigBuilder::new()
 ///     .with_merge_strategy(MergeStrategy::Deep)
 ///     .with_env("APP")
@@ -68,7 +68,7 @@ impl ConfigBuilder {
     /// # Examples
     ///
     /// ```rust
-    /// use konfig::{ConfigBuilder, MergeStrategy};
+    /// use gonfig::{ConfigBuilder, MergeStrategy};
     ///
     /// let builder = ConfigBuilder::new()
     ///     .with_merge_strategy(MergeStrategy::Replace);
@@ -89,7 +89,7 @@ impl ConfigBuilder {
     /// # Examples
     ///
     /// ```rust
-    /// use konfig::ConfigBuilder;
+    /// use gonfig::ConfigBuilder;
     ///
     /// let builder = ConfigBuilder::new()
     ///     .with_env("APP"); // Looks for APP_* environment variables
@@ -148,7 +148,7 @@ impl ConfigBuilder {
     /// # Examples
     ///
     /// ```rust
-    /// use konfig::{ConfigBuilder, Error};
+    /// use gonfig::{ConfigBuilder, Error};
     ///
     /// let builder = ConfigBuilder::new()
     ///     .validate_with(|value| {
