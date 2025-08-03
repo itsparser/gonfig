@@ -11,7 +11,7 @@ homepage = "https://github.com/itsparser/konfig"
 readme = "README.md"
 keywords = ["config", "configuration", "cli", "environment", "settings"]
 categories = ["config", "command-line-interface"]
-exclude = ["examples/"]
+include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE*", "examples/**/*"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive", "env"] }
@@ -24,8 +24,8 @@ once_cell = "1.19"
 tracing = "0.1"
 
 [dependencies.konfig_derive]
-path = "konfig_derive"
 version = "0.1.0"
+path = "konfig_derive"
 
 [dev-dependencies]
 tempfile = "3.10"
