@@ -1,4 +1,4 @@
-use konfig::{ConfigBuilder, Environment, MergeStrategy};
+use gonfig::{ConfigBuilder, Environment, MergeStrategy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -27,7 +27,7 @@ struct DatabaseConfig {
     password: Option<String>,
 }
 
-fn main() -> konfig::Result<()> {
+fn main() -> gonfig::Result<()> {
     std::env::set_var("APP_APP_NAME", "MyApp");
     std::env::set_var("APP_VERSION", "2.0.0");
     std::env::set_var("APP_FEATURES_AUTH_ENABLED", "true");
@@ -53,7 +53,7 @@ fn main() -> konfig::Result<()> {
                 if let Some(max_req) = features.get("max_requests_per_minute") {
                     if let Some(max_req_num) = max_req.as_u64() {
                         if max_req_num == 0 {
-                            return Err(konfig::Error::Validation(
+                            return Err(gonfig::Error::Validation(
                                 "max_requests_per_minute must be greater than 0".into(),
                             ));
                         }

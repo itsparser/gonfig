@@ -78,7 +78,7 @@ jobs:
       run: cargo package --allow-dirty
 
     - name: Check derive package can be built
-      run: cd konfig_derive && cargo package --allow-dirty
+      run: cd gonfig_derive && cargo package --allow-dirty
 
   security:
     name: Security Audit

@@ -1,4 +1,4 @@
-//! # Konfig
+//! # Gonfig
 //!
 //! A unified configuration management library for Rust that seamlessly integrates
 //! environment variables, configuration files, and CLI arguments.
@@ -7,7 +7,7 @@
 //!
 //! - **Multiple Configuration Sources**: Environment variables, config files (JSON/YAML/TOML), and CLI arguments
 //! - **Flexible Prefix Management**: Configure environment variable prefixes at struct and field levels
-//! - **Derive Macro Support**: Easy configuration with `#[derive(Konfig)]`
+//! - **Derive Macro Support**: Easy configuration with `#[derive(Gonfig)]`
 //! - **Merge Strategies**: Deep merge, replace, or append configurations
 //! - **Type Safety**: Fully type-safe configuration with serde
 //! - **Validation**: Built-in validation support for your configurations
@@ -16,11 +16,11 @@
 //! ## Quick Start
 //!
 //! ```rust,no_run
-//! use konfig::Konfig;
+//! use gonfig::Gonfig;
 //! use serde::{Deserialize, Serialize};
 //!
-//! #[derive(Debug, Serialize, Deserialize, Konfig)]
-//! #[Konfig(env_prefix = "APP")]
+//! #[derive(Debug, Serialize, Deserialize, Gonfig)]
+//! #[Gonfig(env_prefix = "APP")]
 //! struct Config {
 //!     // Environment variable: APP_DATABASE_URL
 //!     database_url: String,
@@ -34,11 +34,11 @@
 //!     runtime_data: Option<String>,
 //! }
 //!
-//! fn main() -> konfig::Result<()> {
+//! fn main() -> gonfig::Result<()> {
 //!     std::env::set_var("APP_DATABASE_URL", "postgres://localhost/myapp");
 //!     std::env::set_var("APP_PORT", "8080");
 //!     
-//!     let config = Config::from_konfig()?;
+//!     let config = Config::from_gonfig()?;
 //!     println!("Database: {}", config.database_url);
 //!     println!("Port: {}", config.port);
 //!     Ok(())
@@ -48,23 +48,27 @@
 //! ## Derive Attributes
 //!
 //! ### Struct-level attributes:
-//! - `#[Konfig(env_prefix = "PREFIX")]` - Set environment variable prefix
-//! - `#[Konfig(allow_cli)]` - Enable CLI argument support
-//! - `#[Konfig(allow_config)]` - Enable config file support
+//! - `#[Gonfig(env_prefix = "PREFIX")]` - Set environment variable prefix
+//! - `#[Gonfig(allow_cli)]` - Enable CLI argument support
+//! - `#[Gonfig(allow_config)]` - Enable config file support
 //!
 //! ### Field-level attributes:
-//! - `#[konfig(env_name = "CUSTOM_NAME")]` - Override environment variable name
-//! - `#[konfig(cli_name = "custom-name")]` - Override CLI argument name
-//! - `#[skip]` or `#[skip_konfig]` - Skip this field from all configuration sources
+//! - `#[gonfig(env_name = "CUSTOM_NAME")]` - Override environment variable name
+//! - `#[gonfig(cli_name = "custom-name")]` - Override CLI argument name
+//! - `#[skip]` or `#[skip_gonfig]` - Skip this field from all configuration sources
 //!
 //! ## Environment Variable Naming
 //!
-//! Environment variables follow a hierarchical naming pattern:
+//! Environment variables follow a consistent hierarchical pattern:
 //!
-//! - With prefix `APP` and struct `Config` with field `database_url`:
-//!   - Standard: `APP_CONFIG_DATABASE_URL`
-//!   - With field override `env_name = "DB_URL"`: Uses `DB_URL`
-//!   - Nested structs: `APP_PARENT_CHILD_FIELD`
+//! - **With prefix**: `{PREFIX}_{STRUCT_NAME}_{FIELD_NAME}`
+//!   - Example: prefix `APP`, struct `Config`, field `database_url` → `APP_CONFIG_DATABASE_URL`
+//! - **Without prefix**: `{STRUCT_NAME}_{FIELD_NAME}`
+//!   - Example: struct `Config`, field `database_url` → `CONFIG_DATABASE_URL`
+//! - **With field override**: Uses the exact override value
+//!   - Example: `#[gonfig(env_name = "DB_URL")]` → `DB_URL`
+//! - **Nested structs**: Each level adds to the path
+//!   - Example: `APP_PARENT_CHILD_FIELD`
 
 pub mod builder;
 pub mod cli;
@@ -74,11 +78,11 @@ pub mod error;
 pub mod merge;
 pub mod source;
 
-pub use konfig_derive::Konfig;
+pub use gonfig_derive::Gonfig;
 
 pub use builder::ConfigBuilder;
 pub use cli::Cli;
-pub use config::Config;
+pub use config::{Config, ConfigFormat};
 pub use environment::Environment;
 pub use error::{Error, Result};
 pub use merge::MergeStrategy;

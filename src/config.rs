@@ -77,6 +77,7 @@ impl Config {
             .and_then(ConfigFormat::from_extension)
             .ok_or_else(|| Error::Config(format!("Unknown config format for file: {:?}", path)))?;
 
+        let path_display = path.display().to_string();
         let mut config = Self {
             path,
             format,
@@ -84,7 +85,17 @@ impl Config {
             data: None,
         };
 
-        let _ = config.load();
+        // For optional configs, only ignore file-not-found errors
+        match config.load() {
+            Ok(()) => {},
+            Err(Error::Io(ref e)) if e.kind() == std::io::ErrorKind::NotFound => {
+                // File not found is OK for optional configs
+            },
+            Err(e) => {
+                // Log parse errors but don't fail
+                tracing::warn!("Failed to parse optional config file {}: {}", path_display, e);
+            }
+        }
         Ok(config)
     }
 

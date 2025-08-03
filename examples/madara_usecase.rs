@@ -1,13 +1,13 @@
-use konfig::{ConfigBuilder, Konfig, MergeStrategy};
+use gonfig::{ConfigBuilder, Gonfig, MergeStrategy};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Konfig)]
-#[Konfig(allow_cli, env_prefix = "MDR")]
+#[derive(Debug, Serialize, Deserialize, Gonfig)]
+#[Gonfig(allow_cli, env_prefix = "MDR")]
 struct Madara {
-    #[konfig(env_name = "MADARA_MONGO")]
+    #[gonfig(env_name = "MADARA_MONGO")]
     mongo: MongoConfig,
 
-    #[konfig(env_name = "MADARA_SERVER")]
+    #[gonfig(env_name = "MADARA_SERVER")]
     server: ServerConfig,
 
     #[skip]
@@ -15,12 +15,12 @@ struct Madara {
     _internal: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Konfig)]
-#[Konfig(env_prefix = "MONGO")]
+#[derive(Debug, Serialize, Deserialize, Gonfig)]
+#[Gonfig(env_prefix = "MONGO")]
 struct MongoConfig {
     uri: String,
 
-    #[konfig(env_name = "MONGO_DATABASE")]
+    #[gonfig(env_name = "MONGO_DATABASE")]
     database: String,
 
     connection_timeout: Option<u64>,
@@ -28,26 +28,26 @@ struct MongoConfig {
     max_pool_size: Option<u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Konfig)]
-#[Konfig(allow_cli, env_prefix = "SERVER")]
+#[derive(Debug, Serialize, Deserialize, Gonfig)]
+#[Gonfig(allow_cli, env_prefix = "SERVER")]
 struct ServerConfig {
     host: String,
     port: u16,
 
-    #[konfig(env_name = "WORKERS")]
+    #[gonfig(env_name = "WORKERS")]
     worker_threads: Option<usize>,
 
     enable_cors: Option<bool>,
 }
 
-fn main() -> konfig::Result<()> {
+fn main() -> gonfig::Result<()> {
     println!("=== Madara Configuration Management Demo ===\n");
 
     // Set up environment variables as they would be in production
     setup_environment_variables();
 
     println!("1. Loading with derive macro (simple approach):");
-    match Madara::from_konfig() {
+    match Madara::from_gonfig() {
         Ok(config) => {
             println!("✅ Loaded config from environment:");
             print_madara_config(&config);
@@ -66,7 +66,7 @@ fn main() -> konfig::Result<()> {
                 if let Some(port) = server.get("port") {
                     if let Some(port_num) = port.as_u64() {
                         if port_num > 65535 {
-                            return Err(konfig::Error::Validation("Port must be <= 65535".into()));
+                            return Err(gonfig::Error::Validation("Port must be <= 65535".into()));
                         }
                     }
                 }
@@ -79,7 +79,7 @@ fn main() -> konfig::Result<()> {
                         if !uri_str.starts_with("mongodb://")
                             && !uri_str.starts_with("mongodb+srv://")
                         {
-                            return Err(konfig::Error::Validation(
+                            return Err(gonfig::Error::Validation(
                                 "MongoDB URI must start with mongodb:// or mongodb+srv://".into(),
                             ));
                         }

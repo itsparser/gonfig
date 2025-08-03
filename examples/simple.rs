@@ -1,4 +1,4 @@
-use konfig::{ConfigBuilder, Environment, MergeStrategy};
+use gonfig::{ConfigBuilder, Environment, MergeStrategy};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -8,9 +8,9 @@ struct SimpleConfig {
     debug: bool,
 }
 
-fn main() -> konfig::Result<()> {
+fn main() -> gonfig::Result<()> {
     // For this manual approach, we need flat naming
-    std::env::set_var("APP_NAME", "Konfig Test");
+    std::env::set_var("APP_NAME", "Gonfig Test");
     std::env::set_var("APP_PORT", "8080");
     std::env::set_var("APP_DEBUG", "true");
 

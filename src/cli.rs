@@ -10,6 +10,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct Cli {
     parsed_values: HashMap<String, Value>,
+    field_mappings: HashMap<String, String>,
 }
 
 impl Cli {
@@ -51,7 +52,10 @@ impl Cli {
             }
         }
 
-        Self { parsed_values }
+        Self { 
+            parsed_values,
+            field_mappings: HashMap::new(),
+        }
     }
 
     pub fn with_clap_app<T: Parser + serde::Serialize>() -> Result<Self> {
@@ -68,7 +72,15 @@ impl Cli {
             }
         }
 
-        Ok(Self { parsed_values })
+        Ok(Self { 
+            parsed_values,
+            field_mappings: HashMap::new(),
+        })
+    }
+
+    pub fn with_field_mapping(mut self, field_name: impl Into<String>, cli_key: impl Into<String>) -> Self {
+        self.field_mappings.insert(field_name.into(), cli_key.into());
+        self
     }
 
     fn parse_value(value: &str) -> Value {
@@ -81,7 +93,10 @@ impl Cli {
         }
 
         if let Ok(n) = value.parse::<f64>() {
-            return Value::Number(serde_json::Number::from_f64(n).unwrap());
+            // Handle NaN and infinite values safely
+            if let Some(num) = serde_json::Number::from_f64(n) {
+                return Value::Number(num);
+            }
         }
 
         if value.starts_with('[') && value.ends_with(']') {

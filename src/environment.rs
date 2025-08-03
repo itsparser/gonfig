@@ -14,6 +14,7 @@ pub struct Environment {
     separator: String,
     case_sensitive: bool,
     overrides: HashMap<String, String>,
+    field_mappings: HashMap<String, String>,
 }
 
 impl Default for Environment {
@@ -23,6 +24,7 @@ impl Default for Environment {
             separator: "_".to_string(),
             case_sensitive: false,
             overrides: HashMap::new(),
+            field_mappings: HashMap::new(),
         }
     }
 }
@@ -49,6 +51,11 @@ impl Environment {
 
     pub fn override_with(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.overrides.insert(key.into(), value.into());
+        self
+    }
+
+    pub fn with_field_mapping(mut self, field_name: impl Into<String>, env_key: impl Into<String>) -> Self {
+        self.field_mappings.insert(field_name.into(), env_key.into());
         self
     }
 
@@ -100,25 +107,6 @@ impl Environment {
         json!(value)
     }
 
-    fn insert_nested_value(map: &mut Map<String, Value>, parts: &[&str], value: Value) {
-        if parts.is_empty() {
-            return;
-        }
-
-        if parts.len() == 1 {
-            map.insert(parts[0].to_string(), value);
-            return;
-        }
-
-        let key = parts[0].to_string();
-        let obj = map
-            .entry(key.clone())
-            .or_insert_with(|| Value::Object(Map::new()));
-
-        if let Value::Object(nested_map) = obj {
-            Self::insert_nested_value(nested_map, &parts[1..], value);
-        }
-    }
 
     pub fn collect_for_struct(
         &self,
@@ -164,6 +152,7 @@ impl Environment {
     pub fn collect_with_flat_keys(&self) -> Result<Value> {
         let mut flat_map = HashMap::new();
 
+        // First collect from environment variables
         for (key, value) in env::vars() {
             if let Some(prefix) = &self.prefix {
                 let prefix_str = if self.case_sensitive {
@@ -187,14 +176,37 @@ impl Environment {
             }
         }
 
-        // Convert to nested structure
-        let mut nested = Map::new();
-        for (key, value) in flat_map {
-            let parts: Vec<&str> = key.split('_').collect();
-            Self::insert_nested_value(&mut nested, &parts, value);
+        // Then apply overrides (overrides take precedence)
+        for (override_key, override_value) in &self.overrides {
+            if let Some(prefix) = &self.prefix {
+                let prefix_str = if self.case_sensitive {
+                    prefix.as_str().to_string()
+                } else {
+                    prefix.as_str().to_uppercase()
+                };
+
+                let key_check = if self.case_sensitive {
+                    override_key.clone()
+                } else {
+                    override_key.to_uppercase()
+                };
+
+                if key_check.starts_with(&prefix_str) {
+                    let trimmed = key_check[prefix_str.len()..].trim_start_matches(&self.separator);
+                    flat_map.insert(trimmed.to_lowercase(), Self::parse_env_value(override_value));
+                }
+            } else {
+                flat_map.insert(override_key.to_lowercase(), Self::parse_env_value(override_value));
+            }
         }
 
-        Ok(Value::Object(nested))
+        // Keep keys flat (don't create nested structure)
+        let mut result = Map::new();
+        for (key, value) in flat_map {
+            result.insert(key, value);
+        }
+
+        Ok(Value::Object(result))
     }
 }
 
@@ -204,7 +216,49 @@ impl ConfigSource for Environment {
     }
 
     fn collect(&self) -> Result<Value> {
-        self.collect_with_flat_keys()
+        if !self.field_mappings.is_empty() {
+            // Use field mappings when available
+            let mut result = Map::new();
+            
+            // First collect using field mappings
+            for (field_name, env_key) in &self.field_mappings {
+                // Check overrides first, then environment
+                if let Some(override_value) = self.overrides.get(env_key) {
+                    result.insert(field_name.clone(), Self::parse_env_value(override_value));
+                } else if let Ok(value) = env::var(env_key) {
+                    result.insert(field_name.clone(), Self::parse_env_value(&value));
+                }
+            }
+            
+            // Then collect any prefixed variables not in mappings
+            if let Some(prefix) = &self.prefix {
+                for (key, value) in env::vars() {
+                    let prefix_str = if self.case_sensitive {
+                        prefix.as_str().to_string()
+                    } else {
+                        prefix.as_str().to_uppercase()
+                    };
+                    
+                    let key_check = if self.case_sensitive {
+                        key.clone()
+                    } else {
+                        key.to_uppercase()
+                    };
+                    
+                    if key_check.starts_with(&prefix_str) && !self.field_mappings.values().any(|v| v == &key) {
+                        let trimmed = key_check[prefix_str.len()..].trim_start_matches(&self.separator);
+                        let field_name = trimmed.to_lowercase();
+                        if !result.contains_key(&field_name) {
+                            result.insert(field_name, Self::parse_env_value(&value));
+                        }
+                    }
+                }
+            }
+            
+            Ok(Value::Object(result))
+        } else {
+            self.collect_with_flat_keys()
+        }
     }
 
     fn has_value(&self, key: &str) -> bool {

@@ -1,10 +1,10 @@
-use konfig::Konfig;
+use gonfig::Gonfig;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 /// Example demonstrating various skip attribute usages
-#[derive(Debug, Serialize, Deserialize, Konfig)]
-#[Konfig(env_prefix = "APP", allow_cli)]
+#[derive(Debug, Serialize, Deserialize, Gonfig)]
+#[Gonfig(env_prefix = "APP", allow_cli)]
 struct AppConfig {
     // Regular configuration fields - will be loaded from env/CLI
     /// Environment variable: APP_DATABASE_URL
@@ -22,7 +22,7 @@ struct AppConfig {
     runtime_client: Option<DatabaseClient>,
 
     // Alternative skip syntax
-    #[skip_konfig]
+    #[skip_gonfig]
     #[serde(skip)]
     internal_state: Vec<String>,
 
@@ -49,8 +49,8 @@ struct ThreadPool {
     threads: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Konfig)]
-#[Konfig(env_prefix = "DB")]
+#[derive(Debug, Serialize, Deserialize, Gonfig)]
+#[Gonfig(env_prefix = "DB")]
 struct DatabaseConfig {
     host: String,
     port: u16,
@@ -63,19 +63,19 @@ struct DatabaseConfig {
     /// Environment variable: DB_MAX_CONNECTIONS
     max_connections: u32,
 
-    #[skip_konfig]
+    #[skip_gonfig]
     #[serde(skip)]
     connection_pool: Option<String>, // Skip connection pool instance
 }
 
-fn main() -> konfig::Result<()> {
+fn main() -> gonfig::Result<()> {
     println!("=== Skip Attributes Demonstration ===\n");
 
     // Set up environment variables
     setup_environment();
 
     println!("1. Loading AppConfig with skipped fields:");
-    match AppConfig::from_konfig() {
+    match AppConfig::from_gonfig() {
         Ok(mut config) => {
             println!("✅ Configuration loaded successfully:");
             print_app_config(&config);
@@ -94,7 +94,7 @@ fn main() -> konfig::Result<()> {
     }
 
     println!("\n3. Loading DatabaseConfig with selective skipping:");
-    match DatabaseConfig::from_konfig() {
+    match DatabaseConfig::from_gonfig() {
         Ok(mut db_config) => {
             println!("✅ Database config loaded:");
             print_db_config(&db_config);
@@ -201,7 +201,7 @@ fn show_skip_use_cases() {
     println!("   database_client: Option<DatabaseClient>,  // Custom client instance");
     println!();
     println!("2. Runtime state:");
-    println!("   #[skip_konfig]");
+    println!("   #[skip_gonfig]");
     println!("   cache: HashMap<String, Value>,  // Runtime cache");
     println!();
     println!("3. Sensitive data (manual initialization):");
@@ -213,6 +213,6 @@ fn show_skip_use_cases() {
     println!("   thread_pool: Option<ThreadPool>,  // Initialized based on config");
     println!();
     println!("5. Implementation details:");
-    println!("   #[skip_konfig]");
+    println!("   #[skip_gonfig]");
     println!("   _internal_buffer: Vec<u8>,  // Internal implementation detail");
 }

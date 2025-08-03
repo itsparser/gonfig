@@ -1,9 +1,9 @@
-/// Comprehensive example demonstrating skip functionality in Konfig
-use konfig::Konfig;
+/// Comprehensive example demonstrating skip functionality in Gonfig
+use gonfig::Gonfig;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Konfig)]
-#[Konfig(env_prefix = "APP")]
+#[derive(Debug, Serialize, Deserialize, Gonfig)]
+#[Gonfig(env_prefix = "APP")]
 struct AppConfig {
     // ✅ Included: Environment variable APP_DATABASE_URL
     database_url: String,
@@ -17,7 +17,7 @@ struct AppConfig {
     runtime_connection: Option<String>,
 
     // ❌ Skipped: Alternative syntax
-    #[skip_konfig]
+    #[skip_gonfig]
     #[serde(skip)]
     internal_cache: Vec<String>,
 
@@ -25,8 +25,8 @@ struct AppConfig {
     log_level: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Konfig)]
-#[Konfig(env_prefix = "DB")]
+#[derive(Debug, Serialize, Deserialize, Gonfig)]
+#[Gonfig(env_prefix = "DB")]
 struct DatabaseConfig {
     // ✅ Included: Environment variable DB_HOST
     host: String,
@@ -43,7 +43,7 @@ struct DatabaseConfig {
     max_connections: u32,
 }
 
-fn main() -> konfig::Result<()> {
+fn main() -> gonfig::Result<()> {
     println!("=== Comprehensive Skip Demonstration ===\n");
 
     // Set up environment variables
@@ -74,7 +74,7 @@ fn main() -> konfig::Result<()> {
 
     // Load AppConfig
     println!("1. Loading AppConfig:");
-    match AppConfig::from_konfig() {
+    match AppConfig::from_gonfig() {
         Ok(mut config) => {
             println!("✅ AppConfig loaded successfully:");
             println!("   Database URL: {}", config.database_url);
@@ -101,7 +101,7 @@ fn main() -> konfig::Result<()> {
     }
 
     println!("\n2. Loading DatabaseConfig:");
-    match DatabaseConfig::from_konfig() {
+    match DatabaseConfig::from_gonfig() {
         Ok(mut config) => {
             println!("✅ DatabaseConfig loaded successfully:");
             println!("   Host: {}", config.host);
@@ -134,7 +134,7 @@ fn show_skip_comparison() {
     println!("│ port: u16              │ APP_PORT        │ ✅ Loaded       │");
     println!("│ #[skip]                │ APP_RUNTIME_*   │ ❌ Ignored      │");
     println!("│ runtime_connection     │                 │                 │");
-    println!("│ #[skip_konfig]         │ APP_INTERNAL_*  │ ❌ Ignored      │");
+    println!("│ #[skip_gonfig]         │ APP_INTERNAL_*  │ ❌ Ignored      │");
     println!("│ internal_cache         │                 │                 │");
     println!("│ log_level: String      │ APP_LOG_LEVEL   │ ✅ Loaded       │");
     println!("└─────────────────────────┴─────────────────┴─────────────────┘");
