@@ -90,7 +90,7 @@ impl ConfigMerger {
     }
 
     pub fn merge_with_precedence(&self, sources: HashMap<String, (Value, u8)>) -> Value {
-        let mut values: Vec<(Value, u8)> = sources.into_iter().map(|(_, v)| v).collect();
+        let mut values: Vec<(Value, u8)> = sources.into_values().collect();
 
         values.sort_by_key(|(_, priority)| *priority);
 

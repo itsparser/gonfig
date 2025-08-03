@@ -10,7 +10,7 @@ struct AppConfig {
     /// Environment variable: APP_DATABASE_URL
     database_url: String,
 
-    /// Environment variable: APP_PORT  
+    /// Environment variable: APP_PORT
     port: u16,
 
     /// Environment variable: APP_DEBUG_MODE
@@ -39,10 +39,11 @@ struct AppConfig {
 /// Example struct that would not be serializable
 #[derive(Debug)]
 struct DatabaseClient {
+    #[allow(dead_code)]
     connection: String,
 }
 
-/// Example struct that would not be serializable  
+/// Example struct that would not be serializable
 #[derive(Debug)]
 struct ThreadPool {
     threads: usize,

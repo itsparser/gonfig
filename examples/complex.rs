@@ -23,6 +23,7 @@ struct DatabaseConfig {
     port: u16,
     username: String,
     #[serde(skip_serializing)]
+    #[allow(dead_code)]
     password: Option<String>,
 }
 

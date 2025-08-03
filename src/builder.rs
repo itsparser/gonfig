@@ -12,6 +12,9 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::path::Path;
 
+/// Type alias for validation functions to reduce complexity.
+type ValidationFn = Box<dyn Fn(&Value) -> Result<()>>;
+
 /// Builder for assembling configuration from multiple sources.
 ///
 /// The `ConfigBuilder` allows you to combine environment variables, config files,
@@ -41,7 +44,7 @@ use std::path::Path;
 pub struct ConfigBuilder {
     sources: Vec<Box<dyn ConfigSource>>,
     merge_strategy: MergeStrategy,
-    validate: Option<Box<dyn Fn(&Value) -> Result<()>>>,
+    validate: Option<ValidationFn>,
 }
 
 impl Default for ConfigBuilder {
