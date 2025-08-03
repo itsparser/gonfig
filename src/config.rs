@@ -1,8 +1,11 @@
-use crate::{error::{Error, Result}, source::{ConfigSource, Source}};
+use crate::{
+    error::{Error, Result},
+    source::{ConfigSource, Source},
+};
 use serde_json::Value;
-use std::path::{Path, PathBuf};
-use std::fs;
 use std::any::Any;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
 pub enum ConfigFormat {
@@ -30,8 +33,9 @@ impl ConfigFormat {
             ConfigFormat::Toml => {
                 let toml_value: toml::Value = toml::from_str(content)
                     .map_err(|e| Error::Serialization(format!("TOML parse error: {}", e)))?;
-                serde_json::to_value(toml_value)
-                    .map_err(|e| Error::Serialization(format!("TOML to JSON conversion error: {}", e)))
+                serde_json::to_value(toml_value).map_err(|e| {
+                    Error::Serialization(format!("TOML to JSON conversion error: {}", e))
+                })
             }
         }
     }
@@ -48,36 +52,38 @@ pub struct Config {
 impl Config {
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref().to_path_buf();
-        let format = path.extension()
+        let format = path
+            .extension()
             .and_then(|ext| ext.to_str())
             .and_then(ConfigFormat::from_extension)
             .ok_or_else(|| Error::Config(format!("Unknown config format for file: {:?}", path)))?;
-        
+
         let mut config = Self {
             path,
             format,
             required: true,
             data: None,
         };
-        
+
         config.load()?;
         Ok(config)
     }
 
     pub fn from_file_optional(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref().to_path_buf();
-        let format = path.extension()
+        let format = path
+            .extension()
             .and_then(|ext| ext.to_str())
             .and_then(ConfigFormat::from_extension)
             .ok_or_else(|| Error::Config(format!("Unknown config format for file: {:?}", path)))?;
-        
+
         let mut config = Self {
             path,
             format,
             required: false,
             data: None,
         };
-        
+
         let _ = config.load();
         Ok(config)
     }
@@ -89,7 +95,7 @@ impl Config {
             required: true,
             data: None,
         };
-        
+
         config.load()?;
         Ok(config)
     }
@@ -122,14 +128,17 @@ impl ConfigSource for Config {
     }
 
     fn collect(&self) -> Result<Value> {
-        Ok(self.data.clone().unwrap_or_else(|| Value::Object(serde_json::Map::new())))
+        Ok(self
+            .data
+            .clone()
+            .unwrap_or_else(|| Value::Object(serde_json::Map::new())))
     }
 
     fn has_value(&self, key: &str) -> bool {
         if let Some(data) = &self.data {
             let parts: Vec<&str> = key.split('.').collect();
             let mut current = data;
-            
+
             for part in parts {
                 match current.get(part) {
                     Some(value) => current = value,
@@ -146,7 +155,7 @@ impl ConfigSource for Config {
         if let Some(data) = &self.data {
             let parts: Vec<&str> = key.split('.').collect();
             let mut current = data;
-            
+
             for part in parts {
                 match current.get(part) {
                     Some(value) => current = value,

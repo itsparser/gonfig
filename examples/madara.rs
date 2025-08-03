@@ -2,36 +2,36 @@ use konfig::{ConfigBuilder, Konfig, MergeStrategy};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Konfig)]
-#[konfig(env = true, cli = true, config = true, env_prefix = "MDR")]
+#[Konfig(allow_cli, env_prefix = "MDR")]
 struct Madara {
     #[konfig(env_name = "MADARA_MONGO")]
     mongo: MongoConfig,
-    
+
     #[konfig(env_name = "MADARA_SERVER")]
     server: ServerConfig,
-    
-    #[konfig(skip)]
+
+    #[skip]
+    #[serde(skip)]
     _internal: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Konfig)]
-#[konfig(env = true, env_prefix = "MONGO")]
+#[Konfig(env_prefix = "MONGO")]
 struct MongoConfig {
     uri: String,
-    
+
     #[konfig(env_name = "MONGO_DATABASE")]
     database: String,
-    
-    #[konfig(default)]
+
     connection_timeout: Option<u64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Konfig)]
-#[konfig(env = true)]
+#[Konfig]
 struct ServerConfig {
     host: String,
     port: u16,
-    
+
     #[konfig(env_name = "WORKERS")]
     worker_threads: Option<usize>,
 }
@@ -42,10 +42,10 @@ fn main() -> konfig::Result<()> {
     std::env::set_var("MDR_SERVER_HOST", "0.0.0.0");
     std::env::set_var("MDR_SERVER_PORT", "8080");
     std::env::set_var("MDR_SERVER_WORKERS", "4");
-    
+
     let config = Madara::from_konfig()?;
     println!("Loaded config from environment: {:#?}", config);
-    
+
     let builder = ConfigBuilder::new()
         .with_merge_strategy(MergeStrategy::Deep)
         .with_env("MDR")
@@ -60,7 +60,7 @@ fn main() -> konfig::Result<()> {
             }
             Ok(())
         });
-    
+
     match builder.build::<Madara>() {
         Ok(config) => {
             println!("\nValidated config: {:#?}", config);
@@ -72,6 +72,6 @@ fn main() -> konfig::Result<()> {
         }
         Err(e) => eprintln!("Config error: {}", e),
     }
-    
+
     Ok(())
 }

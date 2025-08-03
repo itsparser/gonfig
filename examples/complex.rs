@@ -36,12 +36,12 @@ fn main() -> konfig::Result<()> {
     std::env::set_var("APP_DATABASES_PRIMARY_PORT", "5432");
     std::env::set_var("APP_DATABASES_PRIMARY_USERNAME", "admin");
     std::env::set_var("APP_DATABASES_PRIMARY_PASSWORD", "secret123");
-    
+
     let env = Environment::new()
         .with_prefix("APP")
         .separator("_")
         .case_sensitive(false);
-    
+
     let builder = ConfigBuilder::new()
         .with_merge_strategy(MergeStrategy::Deep)
         .with_file_optional("examples/config.toml")?
@@ -53,7 +53,7 @@ fn main() -> konfig::Result<()> {
                     if let Some(max_req_num) = max_req.as_u64() {
                         if max_req_num == 0 {
                             return Err(konfig::Error::Validation(
-                                "max_requests_per_minute must be greater than 0".into()
+                                "max_requests_per_minute must be greater than 0".into(),
                             ));
                         }
                     }
@@ -61,9 +61,9 @@ fn main() -> konfig::Result<()> {
             }
             Ok(())
         });
-    
+
     let value = builder.build_value()?;
-    
+
     match serde_json::from_value::<AppConfig>(value.clone()) {
         Ok(config) => {
             println!("Loaded configuration:");
@@ -71,12 +71,17 @@ fn main() -> konfig::Result<()> {
             println!("\nFeatures:");
             println!("  Auth enabled: {}", config.features.auth_enabled);
             println!("  Rate limiting: {}", config.features.rate_limiting);
-            println!("  Max requests/min: {}", config.features.max_requests_per_minute);
-            
+            println!(
+                "  Max requests/min: {}",
+                config.features.max_requests_per_minute
+            );
+
             println!("\nDatabases:");
             for (name, db) in &config.databases {
-                println!("  {}: {}:{} (user: {})", 
-                    name, db.host, db.port, db.username);
+                println!(
+                    "  {}: {}:{} (user: {})",
+                    name, db.host, db.port, db.username
+                );
             }
         }
         Err(e) => eprintln!("Configuration error: {}", e),
@@ -86,6 +91,6 @@ fn main() -> konfig::Result<()> {
         Ok(json_str) => println!("{}", json_str),
         Err(e) => eprintln!("Failed to serialize to JSON: {}", e),
     }
-    
+
     Ok(())
 }

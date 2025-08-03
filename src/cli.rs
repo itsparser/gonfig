@@ -1,4 +1,7 @@
-use crate::{error::Result, source::{ConfigSource, Source}};
+use crate::{
+    error::Result,
+    source::{ConfigSource, Source},
+};
 use clap::Parser;
 use serde_json::Value;
 use std::any::Any;
@@ -6,7 +9,6 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Cli {
-    args: Vec<String>,
     parsed_values: HashMap<String, Value>,
 }
 
@@ -17,14 +19,14 @@ impl Cli {
 
     pub fn from_vec(args: Vec<String>) -> Self {
         let mut parsed_values = HashMap::new();
-        
+
         let mut i = 1;
         while i < args.len() {
             let arg = &args[i];
-            
+
             if arg.starts_with("--") {
                 let key = arg.trim_start_matches("--");
-                
+
                 if i + 1 < args.len() && !args[i + 1].starts_with("--") {
                     let value = &args[i + 1];
                     parsed_values.insert(key.to_string(), Self::parse_value(value));
@@ -35,7 +37,7 @@ impl Cli {
                 }
             } else if arg.starts_with("-") && arg.len() == 2 {
                 let key = arg.trim_start_matches("-");
-                
+
                 if i + 1 < args.len() && !args[i + 1].starts_with("-") {
                     let value = &args[i + 1];
                     parsed_values.insert(key.to_string(), Self::parse_value(value));
@@ -48,51 +50,46 @@ impl Cli {
                 i += 1;
             }
         }
-        
-        Self {
-            args,
-            parsed_values,
-        }
+
+        Self { parsed_values }
     }
 
     pub fn with_clap_app<T: Parser + serde::Serialize>() -> Result<Self> {
         let app = T::parse();
-        
-        let json_value = serde_json::to_value(&app)
-            .map_err(|e| crate::error::Error::Serialization(format!("Failed to serialize clap args: {}", e)))?;
-        
+
+        let json_value = serde_json::to_value(&app).map_err(|e| {
+            crate::error::Error::Serialization(format!("Failed to serialize clap args: {}", e))
+        })?;
+
         let mut parsed_values = HashMap::new();
         if let Value::Object(map) = json_value {
             for (key, value) in map {
                 parsed_values.insert(key, value);
             }
         }
-        
-        Ok(Self {
-            args: std::env::args().collect(),
-            parsed_values,
-        })
+
+        Ok(Self { parsed_values })
     }
 
     fn parse_value(value: &str) -> Value {
         if let Ok(b) = value.parse::<bool>() {
             return Value::Bool(b);
         }
-        
+
         if let Ok(n) = value.parse::<i64>() {
             return Value::Number(n.into());
         }
-        
+
         if let Ok(n) = value.parse::<f64>() {
             return Value::Number(serde_json::Number::from_f64(n).unwrap());
         }
-        
+
         if value.starts_with('[') && value.ends_with(']') {
             if let Ok(arr) = serde_json::from_str::<Vec<Value>>(value) {
                 return Value::Array(arr);
             }
         }
-        
+
         Value::String(value.to_string())
     }
 
@@ -107,9 +104,12 @@ impl ConfigSource for Cli {
     }
 
     fn collect(&self) -> Result<Value> {
-        Ok(Value::Object(self.parsed_values.iter()
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect()))
+        Ok(Value::Object(
+            self.parsed_values
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect(),
+        ))
     }
 
     fn has_value(&self, key: &str) -> bool {

@@ -2,6 +2,14 @@
 name = "konfig_derive"
 version = "0.1.0"
 edition = "2021"
+authors = ["Vasanthkumar Kalaiselvan<itsparser@gmail.com>"]
+description = "Derive macros for the konfig configuration management library"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/itsparser/konfig"
+documentation = "https://docs.rs/konfig_derive"
+homepage = "https://github.com/itsparser/konfig"
+keywords = ["config", "configuration", "derive", "macro"]
+categories = ["config", "development-tools::procedural-macro-helpers"]
 
 [lib]
 proc-macro = true

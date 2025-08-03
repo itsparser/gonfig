@@ -13,28 +13,30 @@ use serde_json::Value;
 use std::path::Path;
 
 /// Builder for assembling configuration from multiple sources.
-/// 
+///
 /// The `ConfigBuilder` allows you to combine environment variables, config files,
 /// and CLI arguments with different merge strategies and validation rules.
-/// 
+///
 /// # Examples
-/// 
-/// ```rust
+///
+/// ```rust,no_run
 /// use konfig::{ConfigBuilder, MergeStrategy};
 /// use serde::{Deserialize, Serialize};
-/// 
+///
 /// #[derive(Deserialize)]
 /// struct Config {
 ///     database_url: String,
 ///     port: u16,
 /// }
-/// 
+///
+/// # fn example() -> konfig::Result<()> {
 /// let config: Config = ConfigBuilder::new()
 ///     .with_merge_strategy(MergeStrategy::Deep)
 ///     .with_env("APP")
 ///     .with_cli()
 ///     .build()?;
-/// # Ok::<(), konfig::Error>(())
+/// # Ok(())
+/// # }
 /// ```
 pub struct ConfigBuilder {
     sources: Vec<Box<dyn ConfigSource>>,
@@ -59,12 +61,12 @@ impl ConfigBuilder {
     }
 
     /// Set the merge strategy for combining configuration sources.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```rust
     /// use konfig::{ConfigBuilder, MergeStrategy};
-    /// 
+    ///
     /// let builder = ConfigBuilder::new()
     ///     .with_merge_strategy(MergeStrategy::Replace);
     /// ```
@@ -80,12 +82,12 @@ impl ConfigBuilder {
     }
 
     /// Add environment variables with a prefix.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```rust
     /// use konfig::ConfigBuilder;
-    /// 
+    ///
     /// let builder = ConfigBuilder::new()
     ///     .with_env("APP"); // Looks for APP_* environment variables
     /// ```
@@ -100,7 +102,7 @@ impl ConfigBuilder {
     }
 
     /// Add a required configuration file.
-    /// 
+    ///
     /// Returns an error if the file doesn't exist or can't be parsed.
     pub fn with_file(self, path: impl AsRef<Path>) -> Result<Self> {
         let config = Config::from_file(path)?;
@@ -108,7 +110,7 @@ impl ConfigBuilder {
     }
 
     /// Add an optional configuration file.
-    /// 
+    ///
     /// Won't return an error if the file doesn't exist.
     pub fn with_file_optional(self, path: impl AsRef<Path>) -> Result<Self> {
         let config = Config::from_file_optional(path)?;
@@ -139,12 +141,12 @@ impl ConfigBuilder {
     }
 
     /// Add a validation function that will be called on the final merged configuration.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```rust
     /// use konfig::{ConfigBuilder, Error};
-    /// 
+    ///
     /// let builder = ConfigBuilder::new()
     ///     .validate_with(|value| {
     ///         if let Some(port) = value.get("port").and_then(|p| p.as_u64()) {
@@ -166,40 +168,40 @@ impl ConfigBuilder {
     /// Build the final configuration by merging all sources.
     pub fn build<T: DeserializeOwned>(self) -> Result<T> {
         let merger = ConfigMerger::new(self.merge_strategy);
-        
+
         let mut source_values = Vec::new();
         for source in &self.sources {
             let value = source.collect()?;
             let priority = source.source_type().priority();
             source_values.push((value, priority));
         }
-        
+
         let merged = merger.merge_sources(source_values);
-        
+
         if let Some(validator) = &self.validate {
             validator(&merged)?;
         }
-        
+
         serde_json::from_value(merged)
             .map_err(|e| Error::Serialization(format!("Failed to deserialize config: {}", e)))
     }
 
     pub fn build_value(self) -> Result<Value> {
         let merger = ConfigMerger::new(self.merge_strategy);
-        
+
         let mut source_values = Vec::new();
         for source in &self.sources {
             let value = source.collect()?;
             let priority = source.source_type().priority();
             source_values.push((value, priority));
         }
-        
+
         let merged = merger.merge_sources(source_values);
-        
+
         if let Some(validator) = &self.validate {
             validator(&merged)?;
         }
-        
+
         Ok(merged)
     }
 
@@ -208,7 +210,8 @@ impl ConfigBuilder {
     }
 
     pub fn get_source<T: ConfigSource + 'static>(&self) -> Option<&T> {
-        self.sources.iter()
+        self.sources
+            .iter()
             .find_map(|source| source.as_any().downcast_ref::<T>())
     }
 }

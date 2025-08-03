@@ -17,7 +17,7 @@ struct Application {
     username: String,
     // expected ENV variable - MD_PASSWORD
     password: String,
-    
+
     #[skip_konfig]
     client: Option<String>, // Using Option<String> instead of Client for demo
 }
@@ -45,12 +45,12 @@ fn main() -> konfig::Result<()> {
     }
 
     println!("\n2. Testing individual component loading:");
-    
+
     // Test Mongo component with CLI support
     println!("Mongo configuration (supports CLI):");
     std::env::set_var("MD_MONGO_USERNAME", "mongo_user");
     std::env::set_var("MD_MONGO_PASSWORD", "mongo_pass");
-    
+
     match Mongo::from_konfig() {
         Ok(mongo) => {
             println!("  Username: {}", mongo.username);
@@ -81,13 +81,13 @@ fn main() -> konfig::Result<()> {
 
 fn setup_environment_variables() {
     println!("Setting up environment variables with your expected pattern:");
-    
+
     // For Config struct with env_prefix="MD"
     std::env::set_var("MD_MONGO_USERNAME", "production_mongo_user");
     std::env::set_var("MD_MONGO_PASSWORD", "super_secret_mongo_password");
     std::env::set_var("MD_APP_USERNAME", "app_user");
     std::env::set_var("MD_APP_PASSWORD", "app_password");
-    
+
     println!("  MD_MONGO_USERNAME=production_mongo_user");
     println!("  MD_MONGO_PASSWORD=super_secret_mongo_password");
     println!("  MD_APP_USERNAME=app_user");
@@ -99,11 +99,17 @@ fn print_config(config: &Config) {
     println!("📋 Complete Configuration:");
     println!("  🗄️  MongoDB:");
     println!("     Username: {}", config.mongo.username);
-    println!("     Password: [REDACTED - {} chars]", config.mongo.password.len());
-    
+    println!(
+        "     Password: [REDACTED - {} chars]",
+        config.mongo.password.len()
+    );
+
     println!("  📱 Application:");
     println!("     Username: {}", config.app.username);
-    println!("     Password: [REDACTED - {} chars]", config.app.password.len());
+    println!(
+        "     Password: [REDACTED - {} chars]",
+        config.app.password.len()
+    );
     println!("     Client: {:?} (field skipped)", config.app.client);
 }
 

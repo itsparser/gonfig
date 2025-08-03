@@ -22,13 +22,13 @@ impl Source {
 
 pub trait ConfigSource: Any + Send + Sync {
     fn source_type(&self) -> Source;
-    
+
     fn collect(&self) -> Result<serde_json::Value>;
-    
+
     fn has_value(&self, key: &str) -> bool;
-    
+
     fn get_value(&self, key: &str) -> Option<serde_json::Value>;
-    
+
     fn as_any(&self) -> &dyn Any;
 }
 

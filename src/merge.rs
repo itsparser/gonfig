@@ -22,7 +22,9 @@ impl MergeStrategy {
             (Value::Object(mut base_map), Value::Object(incoming_map)) => {
                 for (key, incoming_value) in incoming_map {
                     match base_map.get(&key) {
-                        Some(base_value) if base_value.is_object() && incoming_value.is_object() => {
+                        Some(base_value)
+                            if base_value.is_object() && incoming_value.is_object() =>
+                        {
                             let merged = Self::deep_merge(base_value.clone(), incoming_value);
                             base_map.insert(key, merged);
                         }
@@ -77,29 +79,27 @@ impl ConfigMerger {
     pub fn merge_sources(&self, sources: Vec<(Value, u8)>) -> Value {
         let mut sorted_sources = sources;
         sorted_sources.sort_by_key(|(_, priority)| *priority);
-        
+
         let mut result = Value::Object(serde_json::Map::new());
-        
+
         for (value, _) in sorted_sources {
             result = self.strategy.merge(result, value);
         }
-        
+
         result
     }
 
     pub fn merge_with_precedence(&self, sources: HashMap<String, (Value, u8)>) -> Value {
-        let mut values: Vec<(Value, u8)> = sources.into_iter()
-            .map(|(_, v)| v)
-            .collect();
-        
+        let mut values: Vec<(Value, u8)> = sources.into_iter().map(|(_, v)| v).collect();
+
         values.sort_by_key(|(_, priority)| *priority);
-        
+
         let mut result = Value::Object(serde_json::Map::new());
-        
+
         for (value, _) in values {
             result = self.strategy.merge(result, value);
         }
-        
+
         result
     }
 }

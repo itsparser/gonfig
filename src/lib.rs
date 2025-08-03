@@ -1,6 +1,6 @@
 //! # Konfig
 //!
-//! A unified configuration management library for Rust that seamlessly integrates 
+//! A unified configuration management library for Rust that seamlessly integrates
 //! environment variables, configuration files, and CLI arguments.
 //!
 //! ## Features
@@ -15,7 +15,7 @@
 //!
 //! ## Quick Start
 //!
-//! ```rust
+//! ```rust,no_run
 //! use konfig::Konfig;
 //! use serde::{Deserialize, Serialize};
 //!
@@ -30,6 +30,7 @@
 //!     
 //!     // Skip this field from configuration
 //!     #[skip]
+//!     #[serde(skip)]
 //!     runtime_data: Option<String>,
 //! }
 //!
@@ -65,23 +66,23 @@
 //!   - With field override `env_name = "DB_URL"`: Uses `DB_URL`
 //!   - Nested structs: `APP_PARENT_CHILD_FIELD`
 
+pub mod builder;
+pub mod cli;
 pub mod config;
 pub mod environment;
-pub mod cli;
 pub mod error;
 pub mod merge;
 pub mod source;
-pub mod builder;
 
 pub use konfig_derive::Konfig;
 
+pub use builder::ConfigBuilder;
+pub use cli::Cli;
 pub use config::Config;
 pub use environment::Environment;
-pub use cli::Cli;
 pub use error::{Error, Result};
 pub use merge::MergeStrategy;
 pub use source::{ConfigSource, Source};
-pub use builder::ConfigBuilder;
 
 /// A configuration prefix used for environment variables
 #[derive(Debug, Clone, Default)]

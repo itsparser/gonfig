@@ -9,13 +9,12 @@ struct SimpleConfig {
 }
 
 fn main() -> konfig::Result<()> {
-    std::env::set_var("APP_SIMPLE_NAME", "Konfig Test");
-    std::env::set_var("APP_SIMPLE_PORT", "8080");
-    std::env::set_var("APP_SIMPLE_DEBUG", "true");
+    // For this manual approach, we need flat naming
+    std::env::set_var("APP_NAME", "Konfig Test");
+    std::env::set_var("APP_PORT", "8080");
+    std::env::set_var("APP_DEBUG", "true");
 
-    let env = Environment::new()
-        .with_prefix("APP")
-        .separator("_");
+    let env = Environment::new().with_prefix("APP").separator("_");
 
     let builder = ConfigBuilder::new()
         .with_merge_strategy(MergeStrategy::Deep)
