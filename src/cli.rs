@@ -6,7 +6,6 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct Cli {
-    args: Vec<String>,
     parsed_values: HashMap<String, Value>,
 }
 
@@ -50,7 +49,6 @@ impl Cli {
         }
         
         Self {
-            args,
             parsed_values,
         }
     }
@@ -69,7 +67,6 @@ impl Cli {
         }
         
         Ok(Self {
-            args: std::env::args().collect(),
             parsed_values,
         })
     }

@@ -2,7 +2,7 @@ use konfig::{ConfigBuilder, Konfig, MergeStrategy};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Konfig)]
-#[konfig(env = true, cli = true, config = true, env_prefix = "MDR")]
+#[Konfig(allow_cli, env_prefix = "MDR")]
 struct Madara {
     #[konfig(env_name = "MADARA_MONGO")]
     mongo: MongoConfig,
@@ -10,27 +10,26 @@ struct Madara {
     #[konfig(env_name = "MADARA_SERVER")]
     server: ServerConfig,
     
-    #[konfig(skip)]
+    #[skip]
+    #[serde(skip)]
     _internal: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Konfig)]
-#[konfig(env = true, env_prefix = "MONGO")]
+#[Konfig(env_prefix = "MONGO")]
 struct MongoConfig {
     uri: String,
     
     #[konfig(env_name = "MONGO_DATABASE")]
     database: String,
     
-    #[konfig(default)]
     connection_timeout: Option<u64>,
     
-    #[konfig(default)]
     max_pool_size: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Konfig)]
-#[konfig(env = true, cli = true, env_prefix = "SERVER")]
+#[Konfig(allow_cli, env_prefix = "SERVER")]
 struct ServerConfig {
     host: String,
     port: u16,
@@ -38,7 +37,6 @@ struct ServerConfig {
     #[konfig(env_name = "WORKERS")]
     worker_threads: Option<usize>,
     
-    #[konfig(default)]
     enable_cors: Option<bool>,
 }
 

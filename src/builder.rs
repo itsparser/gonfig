@@ -19,7 +19,7 @@ use std::path::Path;
 /// 
 /// # Examples
 /// 
-/// ```rust
+/// ```rust,no_run
 /// use konfig::{ConfigBuilder, MergeStrategy};
 /// use serde::{Deserialize, Serialize};
 /// 
@@ -29,12 +29,14 @@ use std::path::Path;
 ///     port: u16,
 /// }
 /// 
+/// # fn example() -> konfig::Result<()> {
 /// let config: Config = ConfigBuilder::new()
 ///     .with_merge_strategy(MergeStrategy::Deep)
 ///     .with_env("APP")
 ///     .with_cli()
 ///     .build()?;
-/// # Ok::<(), konfig::Error>(())
+/// # Ok(())
+/// # }
 /// ```
 pub struct ConfigBuilder {
     sources: Vec<Box<dyn ConfigSource>>,

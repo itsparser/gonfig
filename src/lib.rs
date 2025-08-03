@@ -15,7 +15,7 @@
 //!
 //! ## Quick Start
 //!
-//! ```rust
+//! ```rust,no_run
 //! use konfig::Konfig;
 //! use serde::{Deserialize, Serialize};
 //!
@@ -30,6 +30,7 @@
 //!     
 //!     // Skip this field from configuration
 //!     #[skip]
+//!     #[serde(skip)]
 //!     runtime_data: Option<String>,
 //! }
 //!

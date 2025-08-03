@@ -2,12 +2,16 @@
 name = "konfig"
 version = "0.1.0"
 edition = "2021"
-authors = ["Your Name <your.email@example.com>"]
-description = "A unified configuration management library for Rust"
+authors = ["Vasanthkumar Kalaiselvan<itsparser@gmail.com>"]
+description = "A unified configuration management library for Rust that seamlessly integrates environment variables, config files, and CLI arguments"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/konfig"
+repository = "https://github.com/itsparser/konfig"
+documentation = "https://docs.rs/konfig"
+homepage = "https://github.com/itsparser/konfig"
+readme = "README.md"
 keywords = ["config", "configuration", "cli", "environment", "settings"]
 categories = ["config", "command-line-interface"]
+exclude = ["examples/"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive", "env"] }

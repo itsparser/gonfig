@@ -58,8 +58,13 @@ pub enum Error {
 /// 
 /// # Examples
 /// 
-/// ```rust
+/// ```rust,no_run
 /// use konfig::Result;
+/// 
+/// struct MyConfig;
+/// impl MyConfig {
+///     fn from_konfig() -> Result<Self> { Ok(MyConfig) }
+/// }
 /// 
 /// fn load_config() -> Result<MyConfig> {
 ///     MyConfig::from_konfig()

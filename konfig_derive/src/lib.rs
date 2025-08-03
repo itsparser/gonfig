@@ -22,15 +22,12 @@ struct KonfigOpts {
     #[darling(default)]
     allow_config: bool,
     
-    #[darling(default)]
-    case_sensitive: bool,
 }
 
 #[derive(Debug, FromField)]
 #[darling(attributes(konfig, skip_konfig, skip))]
 struct KonfigField {
     ident: Option<syn::Ident>,
-    ty: syn::Type,
     
     #[darling(default)]
     env_name: Option<String>,
@@ -43,9 +40,6 @@ struct KonfigField {
     
     #[darling(default)]
     skip: bool,
-    
-    #[darling(default)]
-    default: bool,
 }
 
 #[proc_macro_derive(Konfig, attributes(konfig, skip_konfig, skip, Konfig))]
@@ -67,7 +61,7 @@ fn generate_konfig_impl(opts: &KonfigOpts) -> proc_macro2::TokenStream {
     let struct_has_prefix = opts.env_prefix.is_some();
     let allow_env = opts.allow_env || struct_has_prefix;
     let allow_cli = opts.allow_cli;
-    let allow_config = opts.allow_config;
+    let _allow_config = opts.allow_config;
     
     let env_prefix = opts.env_prefix.as_ref()
         .cloned()
