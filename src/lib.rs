@@ -15,6 +15,8 @@
 //!
 //! ## Quick Start
 //!
+//! ### Using the Derive Macro (Recommended)
+//!
 //! ```rust,no_run
 //! use gonfig::Gonfig;
 //! use serde::{Deserialize, Serialize};
@@ -45,6 +47,119 @@
 //! }
 //! ```
 //!
+//! ### Using ConfigBuilder for Advanced Configuration
+//!
+//! ```rust,no_run
+//! use gonfig::{ConfigBuilder, MergeStrategy};
+//! use serde::Deserialize;
+//!
+//! #[derive(Debug, Deserialize)]
+//! struct AppConfig {
+//!     name: String,
+//!     port: u16,
+//!     debug: bool,
+//! }
+//!
+//! fn main() -> gonfig::Result<()> {
+//!     let config: AppConfig = ConfigBuilder::new()
+//!         .with_merge_strategy(MergeStrategy::Deep)
+//!         .with_env("APP")
+//!         .with_file("config.json")?
+//!         .with_cli()
+//!         .build()?;
+//!     
+//!     println!("Loaded configuration: {:?}", config);
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ## Configuration Sources
+//!
+//! ### Environment Variables
+//! 
+//! Environment variables are automatically mapped to struct fields using configurable prefixes:
+//!
+//! ```rust,no_run
+//! use gonfig::{Environment, ConfigBuilder};
+//! use serde::Deserialize;
+//!
+//! #[derive(Deserialize)]
+//! struct Config {
+//!     database_url: String,
+//!     port: u16,
+//! }
+//!
+//! fn main() -> gonfig::Result<()> {
+//!     std::env::set_var("MYAPP_DATABASE_URL", "postgres://localhost/db");
+//!     std::env::set_var("MYAPP_PORT", "3000");
+//!
+//!     let config: Config = ConfigBuilder::new()
+//!         .with_env("MYAPP")
+//!         .build()?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ### Configuration Files
+//!
+//! Support for JSON, YAML, and TOML configuration files:
+//!
+//! ```rust,no_run
+//! use gonfig::{ConfigBuilder, ConfigFormat};
+//! use serde::Deserialize;
+//!
+//! #[derive(Deserialize)]
+//! struct Config {
+//!     database: DatabaseConfig,
+//!     server: ServerConfig,
+//! }
+//!
+//! #[derive(Deserialize)]
+//! struct DatabaseConfig {
+//!     url: String,
+//!     pool_size: u32,
+//! }
+//!
+//! #[derive(Deserialize)]
+//! struct ServerConfig {
+//!     host: String,
+//!     port: u16,
+//! }
+//!
+//! fn main() -> gonfig::Result<()> {
+//!     let config: Config = ConfigBuilder::new()
+//!         .with_file("app.yaml")?
+//!         .build()?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! ### CLI Arguments
+//!
+//! Integrate with clap for command-line argument parsing:
+//!
+//! ```rust,no_run
+//! use gonfig::{ConfigBuilder, Cli};
+//! use serde::Deserialize;
+//! use clap::Parser;
+//!
+//! #[derive(Parser, Deserialize)]
+//! struct Config {
+//!     #[arg(long, env = "DATABASE_URL")]
+//!     database_url: String,
+//!     
+//!     #[arg(short, long, default_value = "8080")]
+//!     port: u16,
+//! }
+//!
+//! fn main() -> gonfig::Result<()> {
+//!     let config: Config = ConfigBuilder::new()
+//!         .with_cli()
+//!         .build()?;
+//!     Ok(())
+//! }
+//! ```
+//!
 //! ## Derive Attributes
 //!
 //! ### Struct-level attributes:
@@ -70,12 +185,46 @@
 //! - **Nested structs**: Each level adds to the path
 //!   - Example: `APP_PARENT_CHILD_FIELD`
 
+/// Configuration builder for assembling multiple configuration sources.
+///
+/// The builder module provides the [`ConfigBuilder`] type for combining different
+/// configuration sources with customizable merge strategies and validation.
 pub mod builder;
+
+/// Command-line interface integration using clap.
+///
+/// Provides the [`Cli`] type for parsing command-line arguments and integrating
+/// them with other configuration sources.
 pub mod cli;
+
+/// Configuration file parsing and handling.
+///
+/// Supports JSON, YAML, and TOML configuration files through the [`Config`] type
+/// and [`ConfigFormat`] enum.
 pub mod config;
+
+/// Environment variable configuration source.
+///
+/// The [`Environment`] type handles reading and parsing environment variables
+/// with configurable prefixes and separators.
 pub mod environment;
+
+/// Error types and result aliases for configuration operations.
+///
+/// Provides comprehensive error handling through the [`Error`] enum and
+/// convenient [`Result`] type alias.
 pub mod error;
+
+/// Configuration merging strategies and utilities.
+///
+/// Implements different merge strategies like deep merge, replace, and append
+/// through the [`MergeStrategy`] enum and related types.
 pub mod merge;
+
+/// Core traits and types for configuration sources.
+///
+/// Defines the [`ConfigSource`] trait that all configuration sources implement
+/// and the [`Source`] enum for representing different source types.
 pub mod source;
 
 pub use gonfig_derive::Gonfig;

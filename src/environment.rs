@@ -8,6 +8,47 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::env;
 
+/// Environment variable configuration source.
+///
+/// The `Environment` struct provides a flexible way to read configuration values
+/// from environment variables. It supports prefixes, custom separators, case sensitivity
+/// control, and field-specific mappings.
+///
+/// # Examples
+///
+/// ## Basic Usage
+///
+/// ```rust
+/// use gonfig::{Environment, ConfigBuilder};
+/// use serde::Deserialize;
+///
+/// #[derive(Deserialize)]
+/// struct Config {
+///     database_url: String,
+///     port: u16,
+/// }
+///
+/// std::env::set_var("APP_DATABASE_URL", "postgres://localhost/db");
+/// std::env::set_var("APP_PORT", "5432");
+///
+/// let config: Config = ConfigBuilder::new()
+///     .add_source(Box::new(Environment::new().with_prefix("APP")))
+///     .build()
+///     .unwrap();
+/// ```
+///
+/// ## Advanced Configuration
+///
+/// ```rust
+/// use gonfig::Environment;
+///
+/// let env = Environment::new()
+///     .with_prefix("MYAPP")
+///     .separator("__")  // Use double underscore
+///     .case_sensitive(true)
+///     .override_with("database_url", "postgres://override/db")
+///     .with_field_mapping("db_url", "CUSTOM_DB_CONNECTION");
+/// ```
 #[derive(Debug, Clone)]
 pub struct Environment {
     prefix: Option<Prefix>,
@@ -30,30 +71,119 @@ impl Default for Environment {
 }
 
 impl Environment {
+    /// Create a new environment variable source with default settings.
+    ///
+    /// Default configuration:
+    /// - No prefix
+    /// - Separator: `"_"`
+    /// - Case sensitive: `false` (environment variables are converted to uppercase)
+    /// - No overrides or field mappings
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::Environment;
+    ///
+    /// let env = Environment::new();
+    /// ```
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set the environment variable prefix.
+    ///
+    /// When a prefix is set, environment variables will be expected in the format
+    /// `{PREFIX}{SEPARATOR}{FIELD_NAME}`. For example, with prefix "APP" and
+    /// separator "_", a field named `database_url` would map to `APP_DATABASE_URL`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::Environment;
+    ///
+    /// let env = Environment::new().with_prefix("MYAPP");
+    /// // Will look for MYAPP_* environment variables
+    /// ```
     pub fn with_prefix(mut self, prefix: impl Into<String>) -> Self {
         self.prefix = Some(Prefix::new(prefix));
         self
     }
 
+    /// Set the separator used between prefix and field names.
+    ///
+    /// The default separator is `"_"`. This affects how environment variable
+    /// names are constructed from the prefix and field names.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::Environment;
+    ///
+    /// let env = Environment::new()
+    ///     .with_prefix("APP")
+    ///     .separator("__");  // Results in APP__FIELD_NAME
+    /// ```
     pub fn separator(mut self, sep: impl Into<String>) -> Self {
         self.separator = sep.into();
         self
     }
 
+    /// Control case sensitivity for environment variable names.
+    ///
+    /// When `false` (default), all environment variable names are converted
+    /// to uppercase. When `true`, the exact case is preserved.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::Environment;
+    ///
+    /// let env = Environment::new()
+    ///     .with_prefix("app")
+    ///     .case_sensitive(true);
+    /// // Will look for app_field_name instead of APP_FIELD_NAME
+    /// ```
     pub fn case_sensitive(mut self, sensitive: bool) -> Self {
         self.case_sensitive = sensitive;
         self
     }
 
+    /// Override a specific field with a hardcoded value.
+    ///
+    /// This is useful for providing default values or overriding environment
+    /// variables programmatically. Overrides take precedence over actual
+    /// environment variables.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::Environment;
+    ///
+    /// let env = Environment::new()
+    ///     .override_with("debug", "true")
+    ///     .override_with("timeout", "30");
+    /// ```
     pub fn override_with(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
         self.overrides.insert(key.into(), value.into());
         self
     }
 
+    /// Map a specific field to a custom environment variable name.
+    ///
+    /// This allows you to override the default environment variable naming
+    /// for specific fields. The mapping takes precedence over the standard
+    /// prefix and separator rules.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::Environment;
+    ///
+    /// let env = Environment::new()
+    ///     .with_prefix("APP")
+    ///     .with_field_mapping("database_url", "DATABASE_CONNECTION_STRING");
+    /// // database_url will read from DATABASE_CONNECTION_STRING instead of APP_DATABASE_URL
+    /// ```
     pub fn with_field_mapping(
         mut self,
         field_name: impl Into<String>,

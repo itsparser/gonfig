@@ -33,3 +33,7 @@ pretty_assertions = "1.4"
 
 [workspace]
 members = ["gonfig_derive"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

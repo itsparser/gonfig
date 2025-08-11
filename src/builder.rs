@@ -79,6 +79,20 @@ impl ConfigBuilder {
     }
 
     /// Add a custom configuration source.
+    ///
+    /// This method allows you to add any type that implements the [`ConfigSource`] trait.
+    /// Sources are processed in the order they are added, with later sources potentially
+    /// overriding values from earlier sources based on the merge strategy.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::{ConfigBuilder, Environment};
+    ///
+    /// let env_source = Environment::new().with_prefix("CUSTOM");
+    /// let builder = ConfigBuilder::new()
+    ///     .add_source(Box::new(env_source));
+    /// ```
     pub fn add_source(mut self, source: Box<dyn ConfigSource>) -> Self {
         self.sources.push(source);
         self
@@ -86,13 +100,25 @@ impl ConfigBuilder {
 
     /// Add environment variables with a prefix.
     ///
+    /// This is a convenience method that creates an [`Environment`] source with the
+    /// specified prefix and default separator (`_`). Environment variables will be
+    /// matched using the pattern `{PREFIX}_{FIELD_NAME}`.
+    ///
     /// # Examples
     ///
     /// ```rust
     /// use gonfig::ConfigBuilder;
+    /// use serde::Deserialize;
     ///
+    /// #[derive(Deserialize)]
+    /// struct Config {
+    ///     database_url: String,
+    ///     port: u16,
+    /// }
+    ///
+    /// // This will look for APP_DATABASE_URL and APP_PORT
     /// let builder = ConfigBuilder::new()
-    ///     .with_env("APP"); // Looks for APP_* environment variables
+    ///     .with_env("APP");
     /// ```
     pub fn with_env(self, prefix: impl Into<String>) -> Self {
         let env_source = Environment::new().with_prefix(prefix);
@@ -100,13 +126,50 @@ impl ConfigBuilder {
     }
 
     /// Add a custom environment configuration.
+    ///
+    /// Use this method when you need more control over environment variable parsing,
+    /// such as custom separators or case sensitivity settings.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::{ConfigBuilder, Environment};
+    ///
+    /// let custom_env = Environment::new()
+    ///     .with_prefix("MYAPP")
+    ///     .separator("__")  // Use double underscore separator
+    ///     .case_sensitive(false);
+    ///
+    /// let builder = ConfigBuilder::new()
+    ///     .with_env_custom(custom_env);
+    /// ```
     pub fn with_env_custom(self, env: Environment) -> Self {
         self.add_source(Box::new(env))
     }
 
     /// Add a required configuration file.
     ///
+    /// The file format is automatically detected from the file extension:
+    /// - `.json` for JSON files
+    /// - `.yaml` or `.yml` for YAML files
+    /// - `.toml` for TOML files
+    ///
     /// Returns an error if the file doesn't exist or can't be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use gonfig::ConfigBuilder;
+    ///
+    /// let builder = ConfigBuilder::new()
+    ///     .with_file("config.json")?;
+    /// # Ok::<(), gonfig::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::Io`] if the file cannot be read, or [`Error::Config`]
+    /// if the file cannot be parsed.
     pub fn with_file(self, path: impl AsRef<Path>) -> Result<Self> {
         let config = Config::from_file(path)?;
         Ok(self.add_source(Box::new(config)))
@@ -114,19 +177,65 @@ impl ConfigBuilder {
 
     /// Add an optional configuration file.
     ///
-    /// Won't return an error if the file doesn't exist.
+    /// Unlike [`with_file`], this method won't return an error if the file doesn't exist.
+    /// It will still return an error if the file exists but can't be parsed.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use gonfig::ConfigBuilder;
+    ///
+    /// // This won't fail if config.json doesn't exist
+    /// let builder = ConfigBuilder::new()
+    ///     .with_file_optional("config.json")?;
+    /// # Ok::<(), gonfig::Error>(())
+    /// ```
+    ///
+    /// [`with_file`]: ConfigBuilder::with_file
     pub fn with_file_optional(self, path: impl AsRef<Path>) -> Result<Self> {
         let config = Config::from_file_optional(path)?;
         Ok(self.add_source(Box::new(config)))
     }
 
     /// Add a configuration file with explicit format.
+    ///
+    /// Use this method when you need to override the automatic format detection
+    /// or when working with files that don't have standard extensions.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use gonfig::{ConfigBuilder, ConfigFormat};
+    ///
+    /// // Force JSON parsing for a file without .json extension
+    /// let builder = ConfigBuilder::new()
+    ///     .with_file_format("my-config", ConfigFormat::Json)?;
+    /// # Ok::<(), gonfig::Error>(())
+    /// ```
     pub fn with_file_format(self, path: impl AsRef<Path>, format: ConfigFormat) -> Result<Self> {
         let config = Config::with_format(path, format)?;
         Ok(self.add_source(Box::new(config)))
     }
 
     /// Add CLI arguments from `std::env::args()`.
+    ///
+    /// This creates a basic CLI source that parses arguments in the format:
+    /// - `--key=value` or `--key value`
+    /// - `-k=value` or `-k value` (for single character keys)
+    ///
+    /// For more advanced CLI parsing with clap, use [`with_clap`] instead.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::ConfigBuilder;
+    ///
+    /// // Parses CLI args like: --database-url=postgres://... --port=8080
+    /// let builder = ConfigBuilder::new()
+    ///     .with_cli();
+    /// ```
+    ///
+    /// [`with_clap`]: ConfigBuilder::with_clap
     pub fn with_cli(self) -> Self {
         let cli = Cli::from_args();
         self.add_source(Box::new(cli))
@@ -138,6 +247,30 @@ impl ConfigBuilder {
     }
 
     /// Add CLI arguments using clap parser.
+    ///
+    /// This method integrates with clap's derive API for advanced CLI argument parsing.
+    /// Your struct must implement both `clap::Parser` and `serde::Serialize`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use gonfig::ConfigBuilder;
+    /// use serde::{Deserialize, Serialize};
+    /// use clap::Parser;
+    ///
+    /// #[derive(Parser, Serialize, Deserialize)]
+    /// struct CliArgs {
+    ///     #[arg(long, env = "DATABASE_URL")]
+    ///     database_url: String,
+    ///     
+    ///     #[arg(short, long, default_value = "8080")]
+    ///     port: u16,
+    /// }
+    ///
+    /// let builder = ConfigBuilder::new()
+    ///     .with_clap::<CliArgs>()?;
+    /// # Ok::<(), gonfig::Error>(())
+    /// ```
     pub fn with_clap<T: clap::Parser + serde::Serialize>(self) -> Result<Self> {
         let cli = Cli::with_clap_app::<T>()?;
         Ok(self.add_source(Box::new(cli)))
@@ -169,6 +302,42 @@ impl ConfigBuilder {
     }
 
     /// Build the final configuration by merging all sources.
+    ///
+    /// This method processes all registered sources in order, applies the configured
+    /// merge strategy, runs any validation, and deserializes the result into the
+    /// target configuration type.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The target configuration type that implements [`serde::de::DeserializeOwned`]
+    ///
+    /// # Examples
+    ///
+    /// ```rust,no_run
+    /// use gonfig::ConfigBuilder;
+    /// use serde::Deserialize;
+    ///
+    /// #[derive(Deserialize)]
+    /// struct AppConfig {
+    ///     database_url: String,
+    ///     port: u16,
+    ///     debug: bool,
+    /// }
+    ///
+    /// let config: AppConfig = ConfigBuilder::new()
+    ///     .with_env("APP")
+    ///     .with_file_optional("config.json")?
+    ///     .with_cli()
+    ///     .build()?;
+    /// # Ok::<(), gonfig::Error>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Any required configuration source fails to load
+    /// - Validation fails
+    /// - The final merged configuration cannot be deserialized into type `T`
     pub fn build<T: DeserializeOwned>(self) -> Result<T> {
         let merger = ConfigMerger::new(self.merge_strategy);
 
