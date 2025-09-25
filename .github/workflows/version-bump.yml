@@ -12,58 +12,62 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
+      pull-requests: write
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
+          ref: main
+      
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           override: true
-
+      
       - name: Install cargo-edit
         run: cargo install cargo-edit
-
+      
       - name: Get current version
         id: get_version
         run: |
           CURRENT_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
           echo "Current version: $CURRENT_VERSION"
-
+      
       - name: Bump minor version
         run: |
           cargo set-version --bump minor
           NEW_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           echo "New version: $NEW_VERSION"
-          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
-
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_ENV"
+      
       - name: Configure Git
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-
-      - name: Commit version bump
+      
+      - name: Create version bump branch and commit
         run: |
-          git add Cargo.toml Cargo.lock
+          git checkout -b "release/v${{ env.new_version }}"
+          git add Cargo.toml
           git commit -m "Release v${{ env.new_version }}"
-
-      - name: Create and push tag
-        run: |
           git tag "v${{ env.new_version }}"
-          git push origin HEAD:main
-          git push origin "v${{ env.new_version }}"
       
       - name: Build release artifacts
         run: |
           cargo build --release
           cargo test --release
+      
+      - name: Push tag
+        run: |
+          git push origin "v${{ env.new_version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Publish to crates.io
         run: |
@@ -96,3 +100,13 @@ jobs:
             ```
           draft: false
           prerelease: false
+      
+      - name: Create version update PR
+        run: |
+          git push origin "release/v${{ env.new_version }}"
+          gh pr create --title "Update version to v${{ env.new_version }}" \
+                       --body "Automated version update following release v${{ env.new_version }}" \
+                       --base main \
+                       --head "release/v${{ env.new_version }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
