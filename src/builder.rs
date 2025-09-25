@@ -304,32 +304,33 @@ impl ConfigBuilder {
         struct DefaultsSource {
             value: Value,
         }
-        
+
         impl ConfigSource for DefaultsSource {
             fn collect(&self) -> Result<Value> {
                 Ok(self.value.clone())
             }
-            
+
             fn source_type(&self) -> crate::source::Source {
                 // Use Default source type which has the lowest priority
                 crate::source::Source::Default
             }
-            
+
             fn has_value(&self, key: &str) -> bool {
                 self.value.get(key).is_some()
             }
-            
+
             fn get_value(&self, key: &str) -> Option<Value> {
                 self.value.get(key).cloned()
             }
-            
+
             fn as_any(&self) -> &dyn std::any::Any {
                 self
             }
         }
-        
+
         // Add defaults as the first source (lowest priority)
-        self.sources.insert(0, Box::new(DefaultsSource { value: defaults }));
+        self.sources
+            .insert(0, Box::new(DefaultsSource { value: defaults }));
         Ok(self)
     }
 
