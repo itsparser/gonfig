@@ -25,7 +25,7 @@ fn test_default_values() {
 
     assert_eq!(config.service_name, "my-service");
     assert_eq!(config.max_connections, 100);
-    assert_eq!(config.enable_debug, false);
+    assert!(!config.enable_debug);
     assert_eq!(config.timeout_seconds, Some(30));
 }
 
@@ -42,7 +42,7 @@ fn test_default_values_override() {
     assert_eq!(config.max_connections, 200);
 
     // These should still use defaults
-    assert_eq!(config.enable_debug, false);
+    assert!(!config.enable_debug);
     assert_eq!(config.timeout_seconds, Some(30));
 
     // Clean up
@@ -71,6 +71,6 @@ fn test_defaults_with_builder() {
 
     assert_eq!(config.service_name, "builder-service");
     assert_eq!(config.max_connections, 50);
-    assert_eq!(config.enable_debug, true);
+    assert!(config.enable_debug);
     assert_eq!(config.timeout_seconds, Some(60));
 }

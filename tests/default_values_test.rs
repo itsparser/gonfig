@@ -11,16 +11,20 @@ struct TestEnvironmentGuard {
 impl TestEnvironmentGuard {
     fn new(vars: &[&str]) -> Self {
         let vars = vars.iter().map(|s| s.to_string()).collect::<Vec<_>>();
-        let original_values = vars.iter()
+        let original_values = vars
+            .iter()
             .map(|var| env::var(var).ok())
             .collect::<Vec<_>>();
-        
+
         // Clear all vars
         for var in &vars {
             env::remove_var(var);
         }
-        
-        Self { vars, original_values }
+
+        Self {
+            vars,
+            original_values,
+        }
     }
 }
 
@@ -54,15 +58,15 @@ fn test_all_defaults() {
     // Clean environment before test
     let _cleanup = TestEnvironmentGuard::new(&[
         "GONFIG_TEST_SERVICE_NAME",
-        "GONFIG_TEST_PORT", 
-        "GONFIG_TEST_DEBUG"
+        "GONFIG_TEST_PORT",
+        "GONFIG_TEST_DEBUG",
     ]);
 
     let config = SimpleConfig::from_gonfig().unwrap();
 
     assert_eq!(config.service_name, "my-service");
     assert_eq!(config.port, 8080);
-    assert_eq!(config.debug, false);
+    assert!(!config.debug);
 }
 
 #[test]
@@ -70,7 +74,7 @@ fn test_override_defaults() {
     let _cleanup = TestEnvironmentGuard::new(&[
         "GONFIG_TEST_SERVICE_NAME",
         "GONFIG_TEST_PORT",
-        "GONFIG_TEST_DEBUG"
+        "GONFIG_TEST_DEBUG",
     ]);
 
     env::set_var("GONFIG_TEST_SERVICE_NAME", "production-service");
@@ -81,7 +85,7 @@ fn test_override_defaults() {
 
     assert_eq!(config.service_name, "production-service");
     assert_eq!(config.port, 3000);
-    assert_eq!(config.debug, true);
+    assert!(config.debug);
 }
 
 #[test]
@@ -89,7 +93,7 @@ fn test_partial_override() {
     let _cleanup = TestEnvironmentGuard::new(&[
         "GONFIG_TEST_SERVICE_NAME",
         "GONFIG_TEST_PORT",
-        "GONFIG_TEST_DEBUG"
+        "GONFIG_TEST_DEBUG",
     ]);
 
     // Only override service name
@@ -99,5 +103,5 @@ fn test_partial_override() {
 
     assert_eq!(config.service_name, "custom-service");
     assert_eq!(config.port, 8080); // Should use default
-    assert_eq!(config.debug, false); // Should use default
+    assert!(!config.debug); // Should use default
 }
