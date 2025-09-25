@@ -66,8 +66,6 @@ jobs:
       - name: Push tag
         run: |
           git push origin "v${{ env.new_version }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Publish to crates.io
         run: |
