@@ -124,6 +124,18 @@ jobs:
       - name: Publish to crates.io
         if: steps.check_version.outputs.version_exists == 'false'
         run: |
+          # First publish the derive crate
+          echo "Publishing gonfig_derive crate..."
+          cd gonfig_derive
+          cargo publish
+          cd ..
+          
+          # Wait a moment for the derive crate to be available
+          echo "Waiting for derive crate to be available..."
+          sleep 30
+          
+          # Then publish the main crate
+          echo "Publishing main gonfig crate..."
           cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
