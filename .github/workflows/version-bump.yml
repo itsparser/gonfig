@@ -61,10 +61,16 @@ jobs:
 
       - name: Bump version
         run: |
+          # Bump main package version
           cargo set-version --bump ${{ steps.version_type.outputs.bump_type }}
           NEW_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           echo "New version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> "$GITHUB_ENV"
+          
+          # Bump derive crate version to match
+          cd gonfig_derive
+          cargo set-version $NEW_VERSION
+          cd ..
       
       - name: Configure Git
         run: |
@@ -73,8 +79,25 @@ jobs:
       
       - name: Create version bump branch and commit
         run: |
+          # Debug: Check git status
+          git status
+          
+          # Create release branch
           git checkout -b "release/v${{ env.new_version }}"
-          git add Cargo.toml Cargo.lock
+          
+          # Add changes (include both main and derive crate)
+          git add Cargo.toml gonfig_derive/Cargo.toml
+          if [ -f Cargo.lock ]; then
+            git add Cargo.lock
+          fi
+          
+          # Check if there are changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit. Version might already be set."
+            exit 1
+          fi
+          
+          # Commit and tag
           git commit -m "Release v${{ env.new_version }}"
           git tag "v${{ env.new_version }}"
       
