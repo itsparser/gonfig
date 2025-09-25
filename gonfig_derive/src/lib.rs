@@ -24,6 +24,10 @@ struct GonfigOpts {
 #[darling(attributes(gonfig, skip_gonfig, skip))]
 struct GonfigField {
     ident: Option<syn::Ident>,
+    
+    // Reserved for future use (flatten feature)
+    #[allow(dead_code)]
+    ty: syn::Type,
 
     #[darling(default)]
     env_name: Option<String>,
@@ -36,6 +40,14 @@ struct GonfigField {
 
     #[darling(default)]
     skip: bool,
+    
+    // Reserved for future use (flatten feature)
+    #[allow(dead_code)]
+    #[darling(default)]
+    flatten: bool,
+    
+    #[darling(default)]
+    default: Option<String>,
 }
 
 #[proc_macro_derive(Gonfig, attributes(gonfig, skip_gonfig, skip, Gonfig))]
@@ -67,20 +79,23 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
         .expect("Only structs are supported")
         .fields;
 
-    // Generate field mapping information
-    let field_mappings: Vec<_> = fields
-        .iter()
-        .filter(|f| !f.skip_gonfig && !f.skip)
-        .map(|f| {
-            let field_name = f.ident.as_ref().unwrap();
-            let field_str = field_name.to_string();
-
+    // Separate regular fields from flattened fields
+    let mut regular_mappings = Vec::new();
+    let mut default_mappings = Vec::new();
+    
+    for f in fields.iter().filter(|f| !f.skip_gonfig && !f.skip) {
+        let field_name = f.ident.as_ref().unwrap();
+        let field_str = field_name.to_string();
+        
+        // Note: flatten feature is not yet fully implemented
+        // For now, treat all fields as regular fields
+        {
             // Generate expected environment variable name
             let env_key = if let Some(custom_name) = &f.env_name {
                 // Use custom name directly if provided
                 custom_name.clone()
             } else if !env_prefix.is_empty() {
-                // Use prefix + field name pattern (no struct name for hierarchical access)
+                // Use prefix + field name pattern
                 format!("{}_{}", env_prefix, field_str.to_uppercase())
             } else {
                 // Just field name in uppercase
@@ -94,11 +109,18 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                 field_str.replace('_', "-")
             };
 
-            quote! {
+            regular_mappings.push(quote! {
                 (#field_str.to_string(), #env_key.to_string(), #cli_key.to_string())
+            });
+            
+            // Handle default values
+            if let Some(default_value) = &f.default {
+                default_mappings.push(quote! {
+                    (#field_str.to_string(), #default_value.to_string())
+                });
             }
-        })
-        .collect();
+        }
+    }
 
     quote! {
         impl #impl_generics #name #ty_generics #where_clause {
@@ -106,11 +128,12 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                 Self::from_gonfig_with_builder(::gonfig::ConfigBuilder::new())
             }
 
-            pub fn from_gonfig_with_builder(builder: ::gonfig::ConfigBuilder) -> ::gonfig::Result<Self> {
-                let mut builder = builder;
-
-                // Field mapping information: (field_name, env_key, cli_key)
-                let field_mappings = vec![#(#field_mappings),*];
+            pub fn from_gonfig_with_builder(mut builder: ::gonfig::ConfigBuilder) -> ::gonfig::Result<Self> {
+                // Regular field mappings: (field_name, env_key, cli_key)
+                let field_mappings: Vec<(String, String, String)> = vec![#(#regular_mappings),*];
+                
+                // Default value mappings: (field_name, default_value)
+                let default_values: Vec<(String, String)> = vec![#(#default_mappings),*];
 
                 if #allow_env {
                     // Create custom environment source with field mappings
@@ -120,7 +143,7 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                         env = env.with_prefix(#env_prefix);
                     }
 
-                    // Apply field-level mappings
+                    // Apply field-level mappings for regular fields
                     for (field_name, env_key, _cli_key) in &field_mappings {
                         env = env.with_field_mapping(field_name, env_key);
                     }
@@ -132,7 +155,7 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                     // Create custom CLI source with field mappings
                     let mut cli = ::gonfig::Cli::from_args();
 
-                    // Apply field-level CLI mappings
+                    // Apply field-level CLI mappings for regular fields
                     for (field_name, _env_key, cli_key) in &field_mappings {
                         cli = cli.with_field_mapping(field_name, cli_key);
                     }
@@ -162,14 +185,27 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                     }
                 }
 
-                builder.build()
+                // Apply default values
+                if !default_values.is_empty() {
+                    let mut defaults_json = ::serde_json::Map::new();
+                    for (field_name, default_value) in default_values {
+                        // Try to parse as JSON first, otherwise use as string
+                        let value = default_value.parse::<::serde_json::Value>()
+                            .unwrap_or_else(|_| ::serde_json::Value::String(default_value));
+                        defaults_json.insert(field_name, value);
+                    }
+                    builder = builder.with_defaults(::serde_json::Value::Object(defaults_json))?;
+                }
+
+                // Build the final configuration with explicit type
+                builder.build::<Self>()
             }
 
             pub fn gonfig_builder() -> ::gonfig::ConfigBuilder {
                 let mut builder = ::gonfig::ConfigBuilder::new();
 
-                // Field mapping information: (field_name, env_key, cli_key)
-                let field_mappings = vec![#(#field_mappings),*];
+                // Regular field mappings: (field_name, env_key, cli_key)
+                let field_mappings: Vec<(String, String, String)> = vec![#(#regular_mappings),*];
 
                 if #allow_env {
                     // Create custom environment source with field mappings
@@ -179,7 +215,7 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                         env = env.with_prefix(#env_prefix);
                     }
 
-                    // Apply field-level mappings
+                    // Apply field-level mappings for regular fields
                     for (field_name, env_key, _cli_key) in &field_mappings {
                         env = env.with_field_mapping(field_name, env_key);
                     }
@@ -191,7 +227,7 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                     // Create custom CLI source with field mappings
                     let mut cli = ::gonfig::Cli::from_args();
 
-                    // Apply field-level CLI mappings
+                    // Apply field-level CLI mappings for regular fields
                     for (field_name, _env_key, cli_key) in &field_mappings {
                         cli = cli.with_field_mapping(field_name, cli_key);
                     }
@@ -199,9 +235,9 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
                     builder = builder.with_cli_custom(cli);
                 }
 
-                // Note: Config file loading is not supported in gonfig_builder()
-                // due to Result handling requirements. Use from_gonfig() instead
-                // for full config file support.
+                // Note: Config file loading and defaults are not supported in gonfig_builder()
+                // due to Result handling requirements. Use from_gonfig_with_builder() instead
+                // for full config file and default value support.
 
                 builder
             }

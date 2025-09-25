@@ -276,6 +276,63 @@ impl ConfigBuilder {
         Ok(self.add_source(Box::new(cli)))
     }
 
+    /// Add default values as a fallback configuration source.
+    ///
+    /// Default values are applied with the lowest priority, so they will be overridden
+    /// by any other configuration source (environment variables, config files, CLI args).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use gonfig::ConfigBuilder;
+    /// use serde_json::json;
+    ///
+    /// let defaults = json!({
+    ///     "port": 8080,
+    ///     "debug": false,
+    ///     "database": {
+    ///         "pool_size": 10
+    ///     }
+    /// });
+    ///
+    /// let builder = ConfigBuilder::new()
+    ///     .with_defaults(defaults)?;
+    /// # Ok::<(), gonfig::Error>(())
+    /// ```
+    pub fn with_defaults(mut self, defaults: Value) -> Result<Self> {
+        // Create a custom source for defaults with lowest priority
+        struct DefaultsSource {
+            value: Value,
+        }
+        
+        impl ConfigSource for DefaultsSource {
+            fn collect(&self) -> Result<Value> {
+                Ok(self.value.clone())
+            }
+            
+            fn source_type(&self) -> crate::source::Source {
+                // Use Default source type which has the lowest priority
+                crate::source::Source::Default
+            }
+            
+            fn has_value(&self, key: &str) -> bool {
+                self.value.get(key).is_some()
+            }
+            
+            fn get_value(&self, key: &str) -> Option<Value> {
+                self.value.get(key).cloned()
+            }
+            
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+        }
+        
+        // Add defaults as the first source (lowest priority)
+        self.sources.insert(0, Box::new(DefaultsSource { value: defaults }));
+        Ok(self)
+    }
+
     /// Add a validation function that will be called on the final merged configuration.
     ///
     /// # Examples
