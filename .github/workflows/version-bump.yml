@@ -97,9 +97,13 @@ jobs:
             exit 1
           fi
           
-          # Commit and tag
+          # Commit and tag (only if tag doesn't exist)
           git commit -m "Release v${{ env.new_version }}"
-          git tag "v${{ env.new_version }}"
+          if git rev-parse "v${{ env.new_version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ env.new_version }} already exists, skipping tag creation"
+          else
+            git tag "v${{ env.new_version }}"
+          fi
       
       - name: Build release artifacts
         run: |
