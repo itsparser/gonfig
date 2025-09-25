@@ -39,9 +39,26 @@ jobs:
           echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
           echo "Current version: $CURRENT_VERSION"
       
-      - name: Bump patch version
+      - name: Determine version bump type
+        id: version_type
         run: |
-          cargo set-version --bump patch
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          echo "PR Labels: $LABELS"
+          
+          if [[ "$LABELS" == *"major"* ]]; then
+            echo "bump_type=major" >> "$GITHUB_OUTPUT"
+            echo "Version bump: MAJOR"
+          elif [[ "$LABELS" == *"minor"* ]]; then
+            echo "bump_type=minor" >> "$GITHUB_OUTPUT"
+            echo "Version bump: MINOR"
+          else
+            echo "bump_type=patch" >> "$GITHUB_OUTPUT"
+            echo "Version bump: PATCH (default)"
+          fi
+
+      - name: Bump version
+        run: |
+          cargo set-version --bump ${{ steps.version_type.outputs.bump_type }}
           NEW_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           echo "New version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> "$GITHUB_ENV"
@@ -98,6 +115,8 @@ jobs:
             This release was automatically created from PR #${{ github.event.pull_request.number }}
 
             **PR Title:** ${{ github.event.pull_request.title }}
+
+            **Version Bump:** ${{ steps.version_type.outputs.bump_type | upper }}
 
             **Merged by:** @${{ github.event.pull_request.merged_by.login }}
             
