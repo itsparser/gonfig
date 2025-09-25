@@ -47,12 +47,15 @@ jobs:
           
           if [[ "$LABELS" == *"major"* ]]; then
             echo "bump_type=major" >> "$GITHUB_OUTPUT"
+            echo "bump_type_upper=MAJOR" >> "$GITHUB_OUTPUT"
             echo "Version bump: MAJOR"
           elif [[ "$LABELS" == *"minor"* ]]; then
             echo "bump_type=minor" >> "$GITHUB_OUTPUT"
+            echo "bump_type_upper=MINOR" >> "$GITHUB_OUTPUT"
             echo "Version bump: MINOR"
           else
             echo "bump_type=patch" >> "$GITHUB_OUTPUT"
+            echo "bump_type_upper=PATCH" >> "$GITHUB_OUTPUT"
             echo "Version bump: PATCH (default)"
           fi
 
@@ -116,7 +119,7 @@ jobs:
 
             **PR Title:** ${{ github.event.pull_request.title }}
 
-            **Version Bump:** ${{ steps.version_type.outputs.bump_type | upper }}
+            **Version Bump:** ${{ steps.version_type.outputs.bump_type_upper }}
 
             **Merged by:** @${{ github.event.pull_request.merged_by.login }}
             
