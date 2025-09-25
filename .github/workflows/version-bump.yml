@@ -172,12 +172,12 @@ jobs:
           draft: false
           prerelease: false
       
-      - name: Create version update PR
+      - name: Update main branch with new version
         run: |
-          git push origin "release/v${{ env.new_version }}"
-          gh pr create --title "Update version to v${{ env.new_version }}" \
-                       --body "Automated version update following release v${{ env.new_version }}" \
-                       --base main \
-                       --head "release/v${{ env.new_version }}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Switch back to main and merge the version changes
+          git checkout main
+          git merge "release/v${{ env.new_version }}" --no-ff -m "Release v${{ env.new_version }}"
+          git push origin main
+          
+          # Clean up the release branch
+          git branch -D "release/v${{ env.new_version }}"
