@@ -39,9 +39,9 @@ jobs:
           echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
           echo "Current version: $CURRENT_VERSION"
       
-      - name: Bump minor version
+      - name: Bump patch version
         run: |
-          cargo set-version --bump minor
+          cargo set-version --bump patch
           NEW_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           echo "New version: $NEW_VERSION"
           echo "new_version=$NEW_VERSION" >> "$GITHUB_ENV"
