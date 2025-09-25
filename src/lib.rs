@@ -76,7 +76,7 @@
 //! ## Configuration Sources
 //!
 //! ### Environment Variables
-//! 
+//!
 //! Environment variables are automatically mapped to struct fields using configurable prefixes:
 //!
 //! ```rust,no_run

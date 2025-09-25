@@ -24,7 +24,7 @@ struct GonfigOpts {
 #[darling(attributes(gonfig, skip_gonfig, skip))]
 struct GonfigField {
     ident: Option<syn::Ident>,
-    
+
     // Reserved for future use (flatten feature)
     #[allow(dead_code)]
     ty: syn::Type,
@@ -40,12 +40,12 @@ struct GonfigField {
 
     #[darling(default)]
     skip: bool,
-    
+
     // Reserved for future use (flatten feature)
     #[allow(dead_code)]
     #[darling(default)]
     flatten: bool,
-    
+
     #[darling(default)]
     default: Option<String>,
 }
@@ -82,11 +82,11 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
     // Separate regular fields from flattened fields
     let mut regular_mappings = Vec::new();
     let mut default_mappings = Vec::new();
-    
+
     for f in fields.iter().filter(|f| !f.skip_gonfig && !f.skip) {
         let field_name = f.ident.as_ref().unwrap();
         let field_str = field_name.to_string();
-        
+
         // Note: flatten feature is not yet fully implemented
         // For now, treat all fields as regular fields
         {
@@ -112,7 +112,7 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
             regular_mappings.push(quote! {
                 (#field_str.to_string(), #env_key.to_string(), #cli_key.to_string())
             });
-            
+
             // Handle default values
             if let Some(default_value) = &f.default {
                 default_mappings.push(quote! {
@@ -131,7 +131,7 @@ fn generate_gonfig_impl(opts: &GonfigOpts) -> proc_macro2::TokenStream {
             pub fn from_gonfig_with_builder(mut builder: ::gonfig::ConfigBuilder) -> ::gonfig::Result<Self> {
                 // Regular field mappings: (field_name, env_key, cli_key)
                 let field_mappings: Vec<(String, String, String)> = vec![#(#regular_mappings),*];
-                
+
                 // Default value mappings: (field_name, default_value)
                 let default_values: Vec<(String, String)> = vec![#(#default_mappings),*];
 
